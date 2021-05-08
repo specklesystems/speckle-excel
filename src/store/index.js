@@ -1,9 +1,13 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import { exchangeAccessCode, getUserData, goToSpeckleAuthPage, speckleLogOut } from '@/auth'
-
 Vue.use(Vuex)
+
+const APP_NAME = process.env.VUE_APP_SPECKLE_NAME
+const SERVER_URL = process.env.VUE_APP_SERVER_URL
+const TOKEN = `${APP_NAME}.AuthToken`
+const REFRESH_TOKEN = `${APP_NAME}.RefreshToken`
+const CHALLENGE = `${APP_NAME}.Challenge`
 
 export default new Vuex.Store({
   state: {
@@ -14,37 +18,104 @@ export default new Vuex.Store({
     isAuthenticated: (state) => state.user != null
   },
   mutations: {
-    setUser(state, user) {
-      state.user = user
+    SET_USER(state, value) {
+      state.user = value
     },
-    setServerInfo(state, info) {
+    SET_SERVER(state, info) {
       state.serverInfo = info
     }
   },
   actions: {
+    async login({ dispatch, state }, query) {
+      console.log(query)
+      console.log(localStorage.getItem(TOKEN))
+      //we have been redirected after the auth flow
+      if (query.access_code) {
+        await dispatch('exchangeAccessCode', query.access_code)
+        dispatch('getUser')
+        return
+      }
+      //try using existing token
+      if (localStorage.getItem(TOKEN) != null) {
+        await dispatch('getUser')
+        if (state.user != null) return
+      }
+      //go to login and refresh token
+      // Generate random challenge
+      var challenge =
+        Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+      // Save challenge in localStorage
+      localStorage.setItem(CHALLENGE, challenge)
+      // Send user to auth page
+
+      window.location = `${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`
+      //console.log(`${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`)
+    },
     logout(context) {
       // Wipe the state
-      context.commit('setUser', null)
-      context.commit('setServerInfo', null)
+      context.commit('SET_USER', null)
+      context.commit('SET_SERVER', null)
       // Wipe the tokens
-      speckleLogOut()
+      localStorage.removeItem(TOKEN)
+      localStorage.removeItem(REFRESH_TOKEN)
     },
-    exchangeAccessCode(context, accessCode) {
-      return exchangeAccessCode(accessCode)
-    },
-    getUser(context) {
-      return getUserData()
-        .then((json) => {
-          var data = json.data
-          context.commit('setUser', data.user)
-          context.commit('setServerInfo', data.serverInfo)
+    async exchangeAccessCode(_, accessCode) {
+      try {
+        let response = await fetch(`${SERVER_URL}/auth/token/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            accessCode: accessCode,
+            appId: process.env.VUE_APP_SPECKLE_ID,
+            appSecret: process.env.VUE_APP_SPECKLE_SECRET,
+            challenge: localStorage.getItem(CHALLENGE)
+          })
         })
-        .catch((err) => {
-          console.error(err)
-        })
+        let data = await response.json()
+
+        if (data.token) {
+          localStorage.removeItem(CHALLENGE)
+          localStorage.setItem(TOKEN, data.token)
+          localStorage.setItem(REFRESH_TOKEN, data.refreshToken)
+
+          return data
+        }
+      } catch (error) {
+        console.log(error)
+      }
     },
-    redirectToAuth() {
-      goToSpeckleAuthPage()
+    async getUser(context) {
+      try {
+        let query = `query {
+      user {
+        name
+      },
+      serverInfo {
+        name
+        company
+      }
+    }`
+        let token = localStorage.getItem(TOKEN)
+
+        let response = await fetch(`${SERVER_URL}/graphql`, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            query: query
+          })
+        })
+        let data = (await response.json()).data
+
+        context.commit('SET_USER', data.user)
+        context.commit('SET_SERVER', data.serverInfo)
+      } catch (error) {
+        context.dispatch('logout')
+      }
     }
   },
   modules: {}

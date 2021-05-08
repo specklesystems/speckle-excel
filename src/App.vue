@@ -1,41 +1,31 @@
 <template>
   <v-app>
     <v-app-bar app color="primary" dark>
-      <div class="d-flex align-center">
-        <v-img
-          alt="Speckle Logo"
-          class="shrink mr-2"
-          contain
-          :src="require(`@/assets/logo.png`)"
-          transition="scale-transition"
-          width="40"
-          height="24"
-        />
-        <h3>EXCEL CONNECTOR</h3>
-      </div>
+      <v-img contain max-height="30" max-width="30" src="./assets/logo.png" />
+      <v-toolbar-title style="margin-top: -4px">
+        <span class="white--text caption"><b>SPECKLE</b></span>
+        &nbsp;
+        <span class="caption">EXCEL</span>
+      </v-toolbar-title>
 
       <v-spacer></v-spacer>
-
-      <v-btn v-if="!isAuthenticated" outlined @click="$store.dispatch('redirectToAuth')">
-        <span>Login with Speckle</span>
-      </v-btn>
-      <v-btn v-else outlined @click="$store.dispatch('logout')">Log out</v-btn>
+      <div v-if="user">
+        <span class="mr-5">Welcome {{ user.name }}!</span>
+        <v-btn outlined @click="$store.dispatch('logout')">
+          <span>Log out</span>
+        </v-btn>
+      </div>
     </v-app-bar>
 
     <v-main>
-      <HelloWorld />
+      <router-view />
     </v-main>
   </v-app>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld'
-
 export default {
   name: 'App',
-  components: {
-    HelloWorld
-  },
 
   data: () => ({
     //
@@ -43,12 +33,13 @@ export default {
   computed: {
     isAuthenticated() {
       return this.$store.getters.isAuthenticated
+    },
+    user() {
+      return this.$store.state.user
     }
   },
   mounted() {
-    console.log(this.$route.query)
-    if (this.$route.query.access_code)
-      this.$store.dispatch('exchangeAccessCode', this.$route.query.access_code)
+    this.$store.dispatch('login', this.$route.query)
   }
 }
 </script>

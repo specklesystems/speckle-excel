@@ -4,6 +4,7 @@ var options = devCerts.getHttpsServerOptions()
 module.exports = {
   devServer: {
     port: 3000,
+    host: 'localhost',
     https: options,
     headers: {
       'Access-Control-Allow-Origin': '*'
