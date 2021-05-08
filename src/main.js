@@ -7,6 +7,12 @@ import store from './store'
 
 Vue.config.productionTip = false
 
+import VueTimeago from 'vue-timeago'
+Vue.use(VueTimeago, { locale: 'en' })
+
+import VTooltip from 'v-tooltip'
+Vue.use(VTooltip, { defaultDelay: 300 })
+
 window.Office.initialize = () => {
   new Vue({
     router,

@@ -27,8 +27,6 @@ export default new Vuex.Store({
   },
   actions: {
     async login({ dispatch, state }, query) {
-      console.log(query)
-      console.log(localStorage.getItem(TOKEN))
       //we have been redirected after the auth flow
       if (query.access_code) {
         await dispatch('exchangeAccessCode', query.access_code)
@@ -40,6 +38,7 @@ export default new Vuex.Store({
         await dispatch('getUser')
         if (state.user != null) return
       }
+      console.log('challenge')
       //go to login and refresh token
       // Generate random challenge
       var challenge =
