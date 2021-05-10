@@ -43,6 +43,10 @@
         "words": true,
         "nonwords": false
       }
-    ]
+    ],
+    "no-continue": "off",
+    "no-prototype-builtins": "off",
+    "vue/require-default-prop": "off",
+    "vue/no-v-html": "off"
   }
 }

@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import ObjectLoader from '@speckle/objectloader'
 
 Vue.use(Vuex)
 
@@ -115,6 +116,14 @@ export default new Vuex.Store({
       } catch (error) {
         context.dispatch('logout')
       }
+    },
+    async getObject(context, { streamId, objectId }) {
+      return new ObjectLoader({
+        serverUrl: process.env.VUE_APP_SERVER_URL,
+        token: localStorage.getItem(TOKEN),
+        streamId: streamId,
+        objectId: objectId
+      })
     }
   },
   modules: {}

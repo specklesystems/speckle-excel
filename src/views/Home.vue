@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="12" sm="12" md="8" lg="9" xl="8">
+      <v-col cols="12">
         <v-card elevation="0" color="transparent">
           <div v-if="$apollo.loading" class="mx-5">
             <v-skeleton-loader type="card, article, article"></v-skeleton-loader>

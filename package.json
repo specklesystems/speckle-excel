@@ -11,7 +11,9 @@
     "validate": "office-toolbox validate -m public/manifest.xml"
   },
   "dependencies": {
+    "@speckle/objectloader": "^2.0.3",
     "core-js": "^3.6.5",
+    "flat": "^5.0.2",
     "v-tooltip": "^2.1.3",
     "vue": "^2.6.11",
     "vue-apollo": "^3.0.0-beta.11",
