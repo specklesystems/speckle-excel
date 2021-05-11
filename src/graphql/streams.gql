@@ -1,5 +1,5 @@
 query Streams($cursor: String) {
-  streams(cursor: $cursor) {
+  streams(cursor: $cursor, limit: 10) {
     totalCount
     cursor
     items {
@@ -17,16 +17,8 @@ query Streams($cursor: String) {
         avatar
         role
       }
-      commits(limit: 1) {
+      commits {
         totalCount
-        items {
-          id
-          createdAt
-          message
-          authorId
-          authorName
-          authorAvatar
-        }
       }
       branches {
         totalCount

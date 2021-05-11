@@ -1,5 +1,11 @@
 <template>
   <v-container>
+    <v-row align="center">
+      <v-col cols="12" align="center" class="mt-5">
+        <span class="subtitle">Click on a stream to add it to this document. 👇</span>
+      </v-col>
+    </v-row>
+
     <v-row>
       <v-col cols="12">
         <v-card elevation="0" color="transparent">
@@ -31,7 +37,7 @@ import streamsQuery from '../graphql/streams.gql'
 import InfiniteLoading from 'vue-infinite-loading'
 
 export default {
-  name: 'Home',
+  name: 'Add',
 
   components: {
     ListItemStream,

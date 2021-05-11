@@ -11,6 +11,9 @@
           {{ localExpand ? 'mdi-minus' : 'mdi-plus' }}
         </v-icon>
       </v-chip>
+      <v-btn icon small @click="bake">
+        <v-icon small>mdi-download</v-icon>
+      </v-btn>
     </v-card-title>
     <v-card-text v-if="localExpand" class="pr-0 pl-3">
       <component
@@ -25,6 +28,8 @@
   </v-card>
 </template>
 <script>
+import { bake } from '../plugins/excel'
+
 export default {
   name: 'ObjectSimpleViewer',
   components: {
@@ -103,6 +108,9 @@ export default {
   methods: {
     toggleLoadExpand() {
       this.localExpand = !this.localExpand
+    },
+    async bake() {
+      bake(this.value, this.streamId, this.$store)
     }
   }
 }

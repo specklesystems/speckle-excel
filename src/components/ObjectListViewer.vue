@@ -9,7 +9,7 @@
           {{ localExpand ? 'mdi-minus' : 'mdi-plus' }}
         </v-icon>
       </v-chip>
-      <v-btn icon small :to="`/streams/${streamId}/objects/${value.referencedId}`">
+      <v-btn icon small @click="bake">
         <v-icon small>mdi-download</v-icon>
       </v-btn>
     </v-card-title>
@@ -29,6 +29,7 @@
   </v-card>
 </template>
 <script>
+import { bake } from '../plugins/excel'
 export default {
   name: 'ObjectListViewer',
   components: {
@@ -109,6 +110,9 @@ export default {
     },
     loadMore() {
       this.currentLimit += this.itemsPerLoad
+    },
+    async bake() {
+      bake(this.value, this.streamId, this.$store)
     }
   }
 }

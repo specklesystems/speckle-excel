@@ -1,5 +1,7 @@
+/* eslint-disable camelcase */
 import Vue from 'vue'
 import Vuex from 'vuex'
+import VuexPersistence from 'vuex-persist'
 import ObjectLoader from '@speckle/objectloader'
 
 Vue.use(Vuex)
@@ -10,11 +12,18 @@ const TOKEN = `${APP_NAME}.AuthToken`
 const REFRESH_TOKEN = `${APP_NAME}.RefreshToken`
 const CHALLENGE = `${APP_NAME}.Challenge`
 
+const vuexLocal = new VuexPersistence({
+  storage: window.localStorage,
+  key: `${APP_NAME}.vuex`
+})
+
 export default new Vuex.Store({
   state: {
     user: null,
-    serverInfo: null
+    serverInfo: null,
+    streams: []
   },
+  plugins: [vuexLocal.plugin],
   getters: {
     isAuthenticated: (state) => state.user != null
   },
@@ -22,24 +31,18 @@ export default new Vuex.Store({
     SET_USER(state, value) {
       state.user = value
     },
-    SET_SERVER(state, info) {
-      state.serverInfo = info
+    SET_SERVER(state, value) {
+      state.serverInfo = value
+    },
+    ADD_STREAM(state, value) {
+      state.streams.push(value)
     }
   },
   actions: {
-    async login({ dispatch, state }, query) {
-      //we have been redirected after the auth flow
-      if (query.access_code) {
-        await dispatch('exchangeAccessCode', query.access_code)
-        dispatch('getUser')
-        return
-      }
-      //try using existing token
-      if (localStorage.getItem(TOKEN) != null) {
-        await dispatch('getUser')
-        if (state.user != null) return
-      }
-      console.log('challenge')
+    addStream({ commit }, streamId) {
+      commit('ADD_STREAM', streamId)
+    },
+    async login() {
       //go to login and refresh token
       // Generate random challenge
       var challenge =
@@ -51,7 +54,14 @@ export default new Vuex.Store({
       window.location = `${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`
       //console.log(`${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`)
     },
+    async hasValidToken({ state, dispatch }) {
+      if (localStorage.getItem(TOKEN) === null) return false
+      await dispatch('getUser')
+      if (state.user === null) return false
+      return true
+    },
     logout(context) {
+      console.log('LOG OUT')
       // Wipe the state
       context.commit('SET_USER', null)
       context.commit('SET_SERVER', null)
@@ -91,6 +101,7 @@ export default new Vuex.Store({
         let query = `query {
       user {
         name
+        avatar
       },
       serverInfo {
         name
@@ -110,10 +121,10 @@ export default new Vuex.Store({
           })
         })
         let data = (await response.json()).data
-
         context.commit('SET_USER', data.user)
         context.commit('SET_SERVER', data.serverInfo)
       } catch (error) {
+        console.log(error)
         context.dispatch('logout')
       }
     },

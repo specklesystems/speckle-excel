@@ -1,11 +1,18 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="12">
+      <v-col class="py-2">
+        <v-btn text large color="primary" to="/">
+          <v-icon dark>mdi-chevron-left</v-icon>
+          back
+        </v-btn>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="12" class="pt-0">
         <v-card elevation="0" color="transparent">
           <object-speckle-viewer
             v-if="stream"
-            class="mt-4"
             :stream-id="stream.id"
             :object-id="stream.commit.referencedObject"
             :value="commitObject"

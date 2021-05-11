@@ -1,20 +1,40 @@
 <template>
   <v-app>
-    <v-app-bar app color="primary" dark>
-      <v-img contain max-height="30" max-width="30" src="./assets/logo.png" />
-      <v-toolbar-title style="margin-top: -4px">
-        <span class="white--text caption"><b>SPECKLE</b></span>
-        &nbsp;
-        <span class="caption">EXCEL</span>
-      </v-toolbar-title>
+    <v-navigation-drawer v-if="user" v-model="drawer" app>
+      <v-list-item>
+        <v-list-item-avatar>
+          <v-avatar color="background" size="38">
+            <v-img v-if="user.avatar" :src="user.avatar" />
+            <v-img v-else :src="`https://robohash.org/` + user.id + `.png?size=38x38`" />
+          </v-avatar>
+        </v-list-item-avatar>
+        <v-list-item-content>
+          <v-list-item-title>{{ user.name }}</v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
 
-      <v-spacer></v-spacer>
-      <div v-if="user">
-        <!-- <span class="mr-5">Welcome {{ user.name }}!</span> -->
-        <v-btn outlined @click="$store.dispatch('logout')">
-          <span>Log out</span>
-        </v-btn>
-      </div>
+      <v-divider></v-divider>
+
+      <v-list dense nav>
+        <v-list-item v-for="item in items" :key="item.name" link :to="item.to">
+          <v-list-item-icon>
+            <v-icon>{{ item.icon }}</v-icon>
+          </v-list-item-icon>
+
+          <v-list-item-content>
+            <v-list-item-title>{{ item.name }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
+    <v-app-bar app color="primary" dark>
+      <v-app-bar-nav-icon v-if="isAuthenticated" @click="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-btn text to="/" active-class="no-active">
+        <v-img contain max-height="30" max-width="30" src="./assets/logo.png" />
+        <span class="caption"><b>EXCEL</b></span>
+        &nbsp;&nbsp;
+        <span class="caption">CONNECTOR</span>
+      </v-btn>
     </v-app-bar>
 
     <v-main :style="background">
@@ -28,7 +48,24 @@ export default {
   name: 'App',
 
   data: () => ({
-    //
+    drawer: null,
+    items: [
+      {
+        name: 'Add stream',
+        icon: 'mdi-plus',
+        to: '/add'
+      },
+      {
+        name: 'Streams',
+        icon: 'mdi-format-list-bulleted',
+        to: '/'
+      },
+      {
+        name: 'Log out',
+        icon: 'mdi-logout',
+        to: '/logout'
+      }
+    ]
   }),
   computed: {
     isAuthenticated() {
@@ -41,14 +78,14 @@ export default {
       let theme = this.$vuetify.theme.dark ? 'dark' : 'light'
       return `background-color: ${this.$vuetify.theme.themes[theme].background};`
     }
-  },
-  mounted() {
-    console.log(this.$route)
-    this.$store.dispatch('login', this.$route.query)
   }
 }
 </script>
 <style>
+.no-active::before {
+  background-color: transparent !important;
+}
+
 /* TOOLTIPs */
 
 .tooltip {
