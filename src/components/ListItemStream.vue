@@ -44,8 +44,6 @@
             {{ stream.commits.totalCount }}
           </v-chip>
         </div>
-        <!-- <v-icon v-if="stream.isPublic" v-tooltip="`Link sharing on`" small>mdi-link</v-icon>
-        <v-icon v-else v-tooltip="`Link sharing off`" small>mdi-shield-lock</v-icon> -->
       </v-col>
       <v-col cols="12" sm="4" class="text-sm-center text-md-right align-self-center">
         <div>

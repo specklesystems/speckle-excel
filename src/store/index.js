@@ -25,7 +25,8 @@ export default new Vuex.Store({
   },
   plugins: [vuexLocal.plugin],
   getters: {
-    isAuthenticated: (state) => state.user != null
+    isAuthenticated: (state) => state.user != null,
+    serverUrl: () => SERVER_URL
   },
   mutations: {
     SET_USER(state, value) {
@@ -35,12 +36,21 @@ export default new Vuex.Store({
       state.serverInfo = value
     },
     ADD_STREAM(state, value) {
-      state.streams.push(value)
+      state.streams.unshift(value)
+    },
+    REMOVE_STREAM(state, value) {
+      const index = state.streams.indexOf(value)
+      if (index > -1) {
+        state.streams.splice(index, 1)
+      }
     }
   },
   actions: {
     addStream({ commit }, streamId) {
       commit('ADD_STREAM', streamId)
+    },
+    removeStream({ commit }, streamId) {
+      commit('REMOVE_STREAM', streamId)
     },
     async login() {
       //go to login and refresh token

@@ -3,11 +3,10 @@ import flatten from 'flat'
 let rowIndex = 1
 let ignoredProps = ['reference', 'totalChildrenCount']
 let headers = []
-let streamId, store, sheet
+let streamId, store, sheet, rowStart, colStart
 
 async function bakeRow(item) {
   if (Array.isArray(item)) {
-    console.log('list')
     for (let o of item) {
       await bakeRow(o)
     }
@@ -25,8 +24,6 @@ async function bakeRow(item) {
     }
   } else {
     let flat = flatten(item)
-    console.log(flat)
-    console.log(rowIndex)
 
     for (const [key, value] of Object.entries(flat)) {
       if (ignoredProps.includes(key)) continue
@@ -34,12 +31,12 @@ async function bakeRow(item) {
       let colIndex = headers.findIndex((x) => x === key)
       if (colIndex === -1) {
         colIndex = headers.length
-        let keyRange = sheet.getCell(0, colIndex)
+        let keyRange = sheet.getCell(rowStart, colIndex + colStart)
         keyRange.values = key
         headers.push(key)
       }
-      console.log(colIndex)
-      let valueRange = sheet.getCell(rowIndex, colIndex)
+
+      let valueRange = sheet.getCell(rowIndex + rowStart, colIndex + colStart)
       valueRange.values = value
     }
     rowIndex++
@@ -48,8 +45,16 @@ async function bakeRow(item) {
 
 export async function bake(obj, _streamId, _store) {
   window.Excel.run(async (context) => {
-    sheet = context.workbook.worksheets.getActiveWorksheet()
+    let range = context.workbook.getSelectedRange()
+    range.load('address, worksheet, columnIndex, rowIndex')
+
+    await context.sync()
+
+    sheet = range.worksheet
     sheet.load('items/name')
+
+    rowStart = range.rowIndex
+    colStart = range.columnIndex
 
     rowIndex = 1
     headers = []

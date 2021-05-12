@@ -1,5 +1,16 @@
 <template>
   <v-container>
+    <v-row align="center">
+      <v-col cols="12" align="center" class="mt-5">
+        <span class="subtitle">
+          You have {{ streams.length === 0 ? 'no' : streams.length }} stream{{
+            streams.length === 1 ? '' : 's'
+          }}
+          in this document 🙌
+        </span>
+      </v-col>
+    </v-row>
+
     <v-row>
       <v-col cols="12">
         <v-card elevation="0" color="transparent">

@@ -10,6 +10,33 @@
     </v-row>
     <v-row>
       <v-col cols="12" class="pt-0">
+        <v-card v-if="stream">
+          <v-card-title>{{ stream.name }}</v-card-title>
+          <v-card-subtitle>
+            {{ stream.commit.message }}
+          </v-card-subtitle>
+          <v-card-text>
+            <v-chip outlined small>
+              <v-icon small class="mr-2 float-left">mdi-source-commit</v-icon>
+              {{ stream.commit.id }}
+            </v-chip>
+            <v-chip outlined class="ml-2" small>
+              <v-icon small class="mr-2 float-left">mdi-clock-time-four-outline</v-icon>
+              <timeago :datetime="stream.commit.createdAt"></timeago>
+            </v-chip>
+            <br />
+            <br />
+            <i>
+              Expand the data below and click the
+              <v-icon x-small>mdi-download</v-icon>
+              icon to receive flattened data in the selected cell.
+            </i>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="12" class="pt-0">
         <v-card elevation="0" color="transparent">
           <object-speckle-viewer
             v-if="stream"

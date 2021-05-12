@@ -13,20 +13,20 @@ Vue.use(VueTimeago, { locale: 'en' })
 import VTooltip from 'v-tooltip'
 Vue.use(VTooltip, { defaultDelay: 300 })
 
-// window.Office.initialize = () => {
-//   new Vue({
-//     router,
-//     apolloProvider: createProvider(),
-//     vuetify,
-//     store,
-//     render: (h) => h(App)
-//   }).$mount('#app')
-// }
+window.Office.initialize = () => {
+  new Vue({
+    router,
+    apolloProvider: createProvider(),
+    vuetify,
+    store,
+    render: (h) => h(App)
+  }).$mount('#app')
+}
 
-new Vue({
-  router,
-  apolloProvider: createProvider(),
-  vuetify,
-  store,
-  render: (h) => h(App)
-}).$mount('#app')
+// new Vue({
+//   router,
+//   apolloProvider: createProvider(),
+//   vuetify,
+//   store,
+//   render: (h) => h(App)
+// }).$mount('#app')
