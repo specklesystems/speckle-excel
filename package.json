@@ -1,12 +1,15 @@
 {
   "version": "0.1.0",
   "private": true,
+  "config": {
+    "document": "https://teocomi-my.sharepoint.com/:x:/g/personal/teocomi_teocomi_onmicrosoft_com/EbN7hyvf83RCpUnRhXQmlu0BPTcZkj9qBoSujwyJjPBysQ?e=R4laQM"
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "excel": "office-addin-debugging start public/manifest.xml",
-    "excel:web": "office-addin-debugging start public/manifest.xml web \"--document\" \"https://teocomi-my.sharepoint.com/:x:/g/personal/teocomi_teocomi_onmicrosoft_com/ERYfc1sKR-hMqkEKNoksYzQBBLvTSF-WH194YhxhGYp36w?e=NTATmK\"",
+    "excel:web": "office-addin-debugging start public/manifest.xml web",
     "stop": "office-addin-debugging stop public/manifest.xml",
     "validate": "office-toolbox validate -m public/manifest.xml"
   },

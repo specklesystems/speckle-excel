@@ -8,9 +8,11 @@
         </v-btn>
       </v-col>
     </v-row>
+
     <v-row>
       <v-col cols="12" class="pt-0">
         <v-card v-if="stream">
+          <v-card-subtitle class="caption text-uppercase pb-0">Receiving from:</v-card-subtitle>
           <v-card-title>{{ stream.name }}</v-card-title>
           <v-card-subtitle>
             {{ stream.commit.message }}

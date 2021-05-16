@@ -44,7 +44,7 @@ async function bakeRow(item) {
 }
 
 export async function bake(obj, _streamId, _store) {
-  window.Excel.run(async (context) => {
+  await window.Excel.run(async (context) => {
     let range = context.workbook.getSelectedRange()
     range.load('address, worksheet, columnIndex, rowIndex')
 

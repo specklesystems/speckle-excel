@@ -106,6 +106,18 @@ export default new Vuex.Store({
         console.log(error)
       }
     },
+    async postObject() {
+      // let response = await fetch(`${SERVER_URL}/graphql`, {
+      //   method: 'POST',
+      //   headers: {
+      //     Authorization: 'Bearer ' + token,
+      //     'Content-Type': 'application/json'
+      //   },
+      //   body: JSON.stringify({
+      //     query: query
+      //   })
+      // })
+    },
     async getUser(context) {
       try {
         let query = `query {

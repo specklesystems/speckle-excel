@@ -11,7 +11,14 @@
           {{ localExpand ? 'mdi-minus' : 'mdi-plus' }}
         </v-icon>
       </v-chip>
-      <v-btn icon small @click="bake">
+      <v-progress-circular
+        v-if="progress"
+        size="20"
+        class="ml-1"
+        indeterminate
+        color="grey"
+      ></v-progress-circular>
+      <v-btn v-else icon small @click="bake">
         <v-icon small>mdi-download</v-icon>
       </v-btn>
     </v-card-title>
@@ -53,7 +60,8 @@ export default {
   },
   data() {
     return {
-      localExpand: false
+      localExpand: false,
+      progress: false
     }
   },
   computed: {
@@ -110,7 +118,9 @@ export default {
       this.localExpand = !this.localExpand
     },
     async bake() {
-      bake(this.value, this.streamId, this.$store)
+      this.progress = true
+      await bake(this.value, this.streamId, this.$store)
+      this.progress = false
     }
   }
 }

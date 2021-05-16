@@ -151,6 +151,7 @@
           <v-btn
             v-if="selectedCommit"
             color="primary"
+            class="lower"
             small
             :to="`/streams/${streamId}/commits/${selectedCommit.id}`"
           >
@@ -168,7 +169,7 @@
 
       <v-row v-else>
         <v-col class="align-self-center">
-          <v-btn color="primary" small :disabled="!selection">
+          <v-btn color="primary" small :disabled="!selection" @click="send">
             <v-img class="mr-2" width="30" height="30" src="../assets/SenderWhite@32.png" />
 
             Send
@@ -180,6 +181,7 @@
 </template>
 <script>
 import streamQuery from '../graphql/stream.gql'
+const unflatten = require('flat').unflatten
 
 export default {
   props: {
@@ -235,6 +237,39 @@ export default {
     }
   },
   methods: {
+    async send() {
+      window.Excel.run(async (context) => {
+        let sheet = context.workbook.worksheets.getItem(this.selection.split('!')[0])
+        let range = sheet.getRange(this.selection)
+        range.load('values')
+        await context.sync()
+        let values = range.values
+
+        let data = []
+        for (let row = 1; row < values.length; row++) {
+          let object = {}
+          for (let col = 0; col < values[0].length; col++) {
+            let propName = values[0][col]
+            let propValue = values[row][col]
+            object[propName] = propValue
+          }
+          let unlattened = unflatten(object, { object: true })
+
+          data.push(unlattened)
+        }
+
+        //        let response = await fetch(`${SERVER_URL}/graphql`, {
+        //   method: 'POST',
+        //   headers: {
+        //     Authorization: 'Bearer ' + token,
+        //     'Content-Type': 'application/json'
+        //   },
+        //   body: JSON.stringify({
+        //     query: query
+        //   })
+        // })
+      })
+    },
     formatCommitName(id) {
       if (this.selectedBranch.commits.items[0].id == id) return 'latest'
       return id
@@ -268,7 +303,7 @@ export default {
 .stream-card-select .v-text-field__details {
   display: none !important;
 }
-.v-btn {
+.v-btn .lower {
   text-transform: none;
 }
 .floating {
