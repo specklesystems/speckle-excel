@@ -106,17 +106,50 @@ export default new Vuex.Store({
         console.log(error)
       }
     },
-    async postObject() {
-      // let response = await fetch(`${SERVER_URL}/graphql`, {
-      //   method: 'POST',
-      //   headers: {
-      //     Authorization: 'Bearer ' + token,
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     query: query
-      //   })
-      // })
+    async createCommit(context, { streamId, branchName, message, object }) {
+      let query = `mutation objectCreate ($object: ObjectCreateInput!) {objectCreate(objectInput: $object)}`
+      let token = localStorage.getItem(TOKEN)
+
+      let response = await fetch(`${SERVER_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: query,
+          variables: {
+            object: {
+              streamId: streamId,
+              objects: [{ data: object }]
+            }
+          }
+        })
+      })
+      let data = await response.json()
+      console.log(data)
+      let objectId = data.data.objectCreate[0]
+
+      query = `mutation commitCreate($myCommit: CommitCreateInput!){ commitCreate(commit: $myCommit)}`
+
+      response = await fetch(`${SERVER_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: query,
+          variables: {
+            myCommit: {
+              streamId: streamId,
+              branchName: branchName,
+              objectId: objectId,
+              message: message ? message : 'Data from Excel'
+            }
+          }
+        })
+      })
     },
     async getUser(context) {
       try {

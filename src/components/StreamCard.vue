@@ -168,12 +168,19 @@
       </v-row>
 
       <v-row v-else>
-        <v-col class="align-self-center">
-          <v-btn color="primary" small :disabled="!selection" @click="send">
+        <v-col class="align-self-center d-inline-flex">
+          <v-btn color="primary" small :disabled="!selection" class="mt-1" @click="send">
             <v-img class="mr-2" width="30" height="30" src="../assets/SenderWhite@32.png" />
 
             Send
           </v-btn>
+
+          <v-text-field
+            v-model="message"
+            class="pt-0 mt-0 ml-3"
+            label="Message"
+            placeholder="Data from Excel"
+          ></v-text-field>
         </v-col>
       </v-row>
     </v-card>
@@ -195,7 +202,8 @@ export default {
       selectedBranch: null,
       selectedCommit: null,
       isReceiver: true,
-      selection: null
+      selection: null,
+      message: ''
     }
   },
   apollo: {
@@ -250,6 +258,7 @@ export default {
           let object = {}
           for (let col = 0; col < values[0].length; col++) {
             let propName = values[0][col]
+            if (propName !== 'id' && propName.endsWith('.id')) continue
             let propValue = values[row][col]
             object[propName] = propValue
           }
@@ -257,6 +266,13 @@ export default {
 
           data.push(unlattened)
         }
+
+        await this.$store.dispatch('createCommit', {
+          object: data,
+          streamId: this.streamId,
+          branchName: this.selectedBranch.name,
+          message: this.message
+        })
 
         //        let response = await fetch(`${SERVER_URL}/graphql`, {
         //   method: 'POST',
