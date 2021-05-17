@@ -3,6 +3,8 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import VuexPersistence from 'vuex-persist'
 import ObjectLoader from '@speckle/objectloader'
+import streamsModule from './streams'
+import userModule from './user'
 
 Vue.use(Vuex)
 
@@ -14,44 +16,18 @@ const CHALLENGE = `${APP_NAME}.Challenge`
 
 const vuexLocal = new VuexPersistence({
   storage: window.localStorage,
-  key: `${APP_NAME}.vuex`
+  key: `${APP_NAME}.vuex`,
+  modules: ['user']
 })
 
 export default new Vuex.Store({
-  state: {
-    user: null,
-    serverInfo: null,
-    streams: []
-  },
+  state: {},
   plugins: [vuexLocal.plugin],
   getters: {
-    isAuthenticated: (state) => state.user != null,
     serverUrl: () => SERVER_URL
   },
-  mutations: {
-    SET_USER(state, value) {
-      state.user = value
-    },
-    SET_SERVER(state, value) {
-      state.serverInfo = value
-    },
-    ADD_STREAM(state, value) {
-      state.streams.unshift(value)
-    },
-    REMOVE_STREAM(state, value) {
-      const index = state.streams.indexOf(value)
-      if (index > -1) {
-        state.streams.splice(index, 1)
-      }
-    }
-  },
+  mutations: {},
   actions: {
-    addStream({ commit }, streamId) {
-      commit('ADD_STREAM', streamId)
-    },
-    removeStream({ commit }, streamId) {
-      commit('REMOVE_STREAM', streamId)
-    },
     async login() {
       //go to login and refresh token
       // Generate random challenge
@@ -192,5 +168,8 @@ export default new Vuex.Store({
       })
     }
   },
-  modules: {}
+  modules: {
+    streams: streamsModule,
+    user: userModule
+  }
 })

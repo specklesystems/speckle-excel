@@ -36,7 +36,7 @@ export default {
   },
   computed: {
     streams() {
-      return this.$store.state.streams
+      return this.$store.state.streams.streams
     }
   },
   mounted() {},

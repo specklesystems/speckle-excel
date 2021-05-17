@@ -72,7 +72,7 @@ export default {
       return this.$store.getters.isAuthenticated
     },
     user() {
-      return this.$store.state.user
+      return this.$store.state.user.user
     },
     background() {
       let theme = this.$vuetify.theme.dark ? 'dark' : 'light'
