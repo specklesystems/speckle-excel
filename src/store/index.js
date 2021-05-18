@@ -6,6 +6,8 @@ import ObjectLoader from '@speckle/objectloader'
 import streamsModule from './streams'
 import userModule from './user'
 
+const xml2js = require('xml2js')
+
 Vue.use(Vuex)
 
 const APP_NAME = process.env.VUE_APP_SPECKLE_NAME
@@ -13,6 +15,7 @@ const SERVER_URL = process.env.VUE_APP_SERVER_URL
 const TOKEN = `${APP_NAME}.AuthToken`
 const REFRESH_TOKEN = `${APP_NAME}.RefreshToken`
 const CHALLENGE = `${APP_NAME}.Challenge`
+const XML_NS = 'https://speckle.systems'
 
 const vuexLocal = new VuexPersistence({
   storage: window.localStorage,
@@ -20,9 +23,73 @@ const vuexLocal = new VuexPersistence({
   modules: ['user']
 })
 
+console.log('loaded')
+
+const vuexExcel = new VuexPersistence({
+  restoreState: async () => {
+    let state = null
+    await window.Office.onReady()
+    if (!window.Excel) return null
+    await window.Excel.run(async (context) => {
+      let parts = context.workbook.customXmlParts.getByNamespace(XML_NS)
+      let partsCount = parts.getCount()
+      await context.sync()
+
+      if (partsCount.value !== 1) return null
+
+      let xml = parts.getOnlyItem()
+      let xmlBlob = xml.getXml()
+      await context.sync()
+      var parser = new xml2js.Parser({ explicitArray: false })
+      try {
+        parser.parseString(xmlBlob.value, (err, result) => {
+          state = JSON.parse(result.SpeckleData.state)
+        })
+      } catch (e) {
+        console.log(e)
+      }
+    })
+
+    if (state) return state
+    return null
+  },
+  saveState: async (key, state) => {
+    await window.Excel.run(async (context) => {
+      let xmlParts = context.workbook.customXmlParts
+      let parts = context.workbook.customXmlParts.getByNamespace(XML_NS)
+      let partsCount = parts.getCount()
+      await context.sync()
+
+      if (partsCount.value === 1) {
+        let xml = parts.getOnlyItem()
+        xml.delete()
+        await context.sync()
+      }
+
+      let builder = new xml2js.Builder()
+
+      let obj = {
+        SpeckleData: {
+          $: {
+            xmlns: XML_NS
+          },
+          //parsing to string as could not convert JSON to XML directly, arrays kept breaking
+          state: JSON.stringify(state)
+        }
+      }
+
+      let xml = builder.buildObject(obj)
+      xmlParts.add(xml)
+      await context.sync()
+    })
+  },
+  modules: ['streams'],
+  asyncStorage: true
+})
+
 export default new Vuex.Store({
   state: {},
-  plugins: [vuexLocal.plugin],
+  plugins: [vuexLocal.plugin, vuexExcel.plugin],
   getters: {
     serverUrl: () => SERVER_URL
   },

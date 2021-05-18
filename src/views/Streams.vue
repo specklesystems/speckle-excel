@@ -16,7 +16,7 @@
         <v-card elevation="0" color="transparent">
           <v-card-text class="mt-0 pt-3">
             <div v-for="(stream, i) in streams" :key="i">
-              <stream-card :stream-id="stream"></stream-card>
+              <stream-card :saved-stream="stream"></stream-card>
             </div>
           </v-card-text>
         </v-card>
@@ -36,6 +36,7 @@ export default {
   },
   computed: {
     streams() {
+      if (!this.$store.state) return []
       return this.$store.state.streams.streams
     }
   },

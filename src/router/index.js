@@ -47,6 +47,7 @@ const router = new VueRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  await store.restored
   if (to.query.access_code) {
     await store.dispatch('exchangeAccessCode', to.query.access_code)
     let loggedIn = await store.dispatch('hasValidToken')

@@ -32,11 +32,11 @@
             </v-btn>
 
             <v-btn
-              v-tooltip="`Click to make this a ` + (isReceiver ? `sender` : `receiver`)"
+              v-tooltip="`Click to make this a ` + (savedStream.isReceiver ? `sender` : `receiver`)"
               small
               icon
               color="primary"
-              @click="isReceiver = !isReceiver"
+              @click="swapReceiver"
             >
               <v-icon small>mdi-swap-horizontal</v-icon>
             </v-btn>
@@ -72,7 +72,7 @@
           </v-select>
         </v-col>
         <v-col cols="6" class="pa-0 align-self-start">
-          <div v-if="isReceiver">
+          <div v-if="savedStream.isReceiver">
             <v-select
               v-if="
                 selectedBranch && selectedBranch.commits && selectedBranch.commits.items.length > 0
@@ -146,14 +146,14 @@
           </div>
         </v-col>
       </v-row>
-      <v-row v-if="isReceiver">
+      <v-row v-if="savedStream.isReceiver">
         <v-col class="align-self-center">
           <v-btn
             v-if="selectedCommit"
             color="primary"
             class="lower"
             small
-            :to="`/streams/${streamId}/commits/${selectedCommit.id}`"
+            :to="`/streams/${stream.id}/commits/${selectedCommit.id}`"
           >
             <v-img class="mr-2" width="30" height="30" src="../assets/ReceiverWhite@32.png" />
 
@@ -192,8 +192,8 @@ const unflatten = require('flat').unflatten
 
 export default {
   props: {
-    streamId: {
-      type: String,
+    savedStream: {
+      type: Object,
       default: null
     }
   },
@@ -201,7 +201,6 @@ export default {
     return {
       selectedBranch: null,
       selectedCommit: null,
-      isReceiver: true,
       selection: null,
       message: ''
     }
@@ -212,11 +211,11 @@ export default {
       query: streamQuery,
       variables() {
         return {
-          id: this.streamId
+          id: this.savedStream.id
         }
       },
       skip() {
-        return this.streamId === null
+        return this.savedStream === null
       },
       result() {
         if (this.stream && this.stream.branches) {
@@ -245,6 +244,11 @@ export default {
     }
   },
   methods: {
+    swapReceiver() {
+      let s = { ...this.savedStream }
+      s.isReceiver = !s.isReceiver
+      this.$store.dispatch('updateStream', s)
+    },
     async send() {
       window.Excel.run(async (context) => {
         let sheet = context.workbook.worksheets.getItem(this.selection.split('!')[0])
@@ -269,7 +273,7 @@ export default {
 
         await this.$store.dispatch('createCommit', {
           object: data,
-          streamId: this.streamId,
+          streamId: this.stream.id,
           branchName: this.selectedBranch.name,
           message: this.message
         })
@@ -299,18 +303,9 @@ export default {
         this.selection = range.address
       })
     },
-    changeBranch() {
-      this.clearRendererTrigger += 42
-      this.$router.push({
-        path:
-          '/streams/' +
-          this.$route.params.streamId +
-          '/branches/' +
-          encodeURIComponent(this.selectedBranch.name)
-      })
-    },
+
     remove() {
-      return this.$store.dispatch('removeStream', this.streamId)
+      return this.$store.dispatch('removeStream', this.stream)
     }
   }
 }

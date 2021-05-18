@@ -69,9 +69,11 @@ export default {
   }),
   computed: {
     isAuthenticated() {
+      if (!this.$store.state) return false
       return this.$store.getters.isAuthenticated
     },
     user() {
+      if (!this.$store.state) return null
       return this.$store.state.user.user
     },
     background() {

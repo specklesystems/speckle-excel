@@ -109,7 +109,13 @@ export default {
   },
   methods: {
     addStream() {
-      this.$store.dispatch('addStream', this.stream.id)
+      this.$store.dispatch('addStream', {
+        id: this.stream.id,
+        isReceiver: true,
+        selection: null,
+        selectedBranch: null,
+        selectedCommit: null
+      })
       this.$router.push('/')
     }
   }
