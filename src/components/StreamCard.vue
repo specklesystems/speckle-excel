@@ -110,8 +110,12 @@
             </div>
           </div>
           <div v-else class="caption d-inline-flex" style="width: 100%">
-            <span v-if="selection" v-tooltip="selection" class="mt-2 ml-2 text-truncate">
-              {{ selection }}
+            <span
+              v-if="savedStream.selection"
+              v-tooltip="savedStream.selection"
+              class="mt-2 ml-2 text-truncate"
+            >
+              {{ savedStream.selection }}
             </span>
             <span v-else class="mt-2 ml-2">No range set</span>
 
@@ -138,7 +142,7 @@
                 <v-list-item @click="setSelection">
                   <v-list-item-title class="caption">Set range</v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="selection = null">
+                <v-list-item @click="clearSelection">
                   <v-list-item-title class="caption">Clear</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -169,7 +173,13 @@
 
       <v-row v-else>
         <v-col class="align-self-center d-inline-flex">
-          <v-btn color="primary" small :disabled="!selection" class="mt-1" @click="send">
+          <v-btn
+            color="primary"
+            small
+            :disabled="!savedStream.selection"
+            class="mt-1"
+            @click="send"
+          >
             <v-img class="mr-2" width="30" height="30" src="../assets/SenderWhite@32.png" />
 
             Send
@@ -199,9 +209,6 @@ export default {
   },
   data() {
     return {
-      selectedBranch: null,
-      selectedCommit: null,
-      selection: null,
       message: ''
     }
   },
@@ -216,31 +223,42 @@ export default {
       },
       skip() {
         return this.savedStream === null
-      },
-      result() {
-        if (this.stream && this.stream.branches) {
-          this.selectedBranch = this.stream.branches.items[0]
-        }
       }
+      // result() {
+      //   if (this.stream && this.stream.branches) {
+      //     this.selectedBranch = this.stream.branches.items[this.stream.branches.items.length - 1]
+      //   }
+      // }
     }
   },
   computed: {
     serverUrl() {
       return this.$store.getters.serverUrl
-    }
-  },
-  watch: {
-    // '$route.params.branchName': {
-    //   handler: function (to, from) {
-    //     this.selectBranch()
-    //   },
-    //   deep: true,
-    //   immediate: true
-    // },
-    selectedBranch() {
-      if (this.selectedBranch.commits.items.length > 0)
-        this.selectedCommit = this.selectedBranch.commits.items[0]
-      else this.selectedCommit = null
+    },
+    selectedBranch: {
+      get() {
+        return this.savedStream.selectedBranch
+      },
+      // setter
+      set(value) {
+        let s = { ...this.savedStream }
+        s.selectedBranch = value
+        if (value.commits.items.length > 0) s.selectedCommit = value.commits.items[0]
+        else s.selectedCommit = null
+
+        this.$store.dispatch('updateStream', s)
+      }
+    },
+    selectedCommit: {
+      get() {
+        return this.savedStream.selectedCommit
+      },
+      // setter
+      set(value) {
+        let s = { ...this.savedStream }
+        s.selectedCommit = value
+        this.$store.dispatch('updateStream', s)
+      }
     }
   },
   methods: {
@@ -249,10 +267,31 @@ export default {
       s.isReceiver = !s.isReceiver
       this.$store.dispatch('updateStream', s)
     },
+    async setSelection() {
+      await window.Excel.run(async (context) => {
+        let range = context.workbook.getSelectedRange()
+        range.load('address')
+
+        await context.sync()
+
+        let s = { ...this.savedStream }
+        s.selection = range.address
+        this.$store.dispatch('updateStream', s)
+      })
+    },
+    clearSelection() {
+      let s = { ...this.savedStream }
+      s.selection = ''
+      this.$store.dispatch('updateStream', s)
+    },
+
+    remove() {
+      return this.$store.dispatch('removeStream', this.stream)
+    },
     async send() {
       window.Excel.run(async (context) => {
-        let sheet = context.workbook.worksheets.getItem(this.selection.split('!')[0])
-        let range = sheet.getRange(this.selection)
+        let sheet = context.workbook.worksheets.getItem(this.savedStream.selection.split('!')[0])
+        let range = sheet.getRange(this.savedStream.selection)
         range.load('values')
         await context.sync()
         let values = range.values
@@ -293,19 +332,6 @@ export default {
     formatCommitName(id) {
       if (this.selectedBranch.commits.items[0].id == id) return 'latest'
       return id
-    },
-    async setSelection() {
-      window.Excel.run(async (context) => {
-        let range = context.workbook.getSelectedRange()
-        range.load('address')
-
-        await context.sync()
-        this.selection = range.address
-      })
-    },
-
-    remove() {
-      return this.$store.dispatch('removeStream', this.stream)
     }
   }
 }
