@@ -136,13 +136,23 @@
               </template>
 
               <v-list>
-                <v-list-item @click="setSelection">
-                  <v-list-item-title class="caption">Set range with headers</v-list-item-title>
+                <v-list-item @click="setRange(true)">
+                  <v-list-item-title
+                    v-tooltip="`Ranges with headers will be sent as objects`"
+                    class="caption"
+                  >
+                    Set range with headers
+                  </v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="setSelection">
-                  <v-list-item-title class="caption">Set range</v-list-item-title>
+                <v-list-item @click="setRange(false)">
+                  <v-list-item-title
+                    v-tooltip="`Ranges without headers will be sent as data arrays`"
+                    class="caption"
+                  >
+                    Set range
+                  </v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="clearSelection">
+                <v-list-item v-if="savedStream.selection" @click="clearSelection">
                   <v-list-item-title class="caption">Clear</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -267,7 +277,8 @@ export default {
       s.isReceiver = !s.isReceiver
       this.$store.dispatch('updateStream', s)
     },
-    async setSelection() {
+
+    async setRange(headers) {
       await window.Excel.run(async (context) => {
         let range = context.workbook.getSelectedRange()
         range.load('address')
@@ -276,6 +287,7 @@ export default {
 
         let s = { ...this.savedStream }
         s.selection = range.address
+        s.hasHeaders = headers
         this.$store.dispatch('updateStream', s)
       })
     },
@@ -297,17 +309,27 @@ export default {
         let values = range.values
 
         let data = []
-        for (let row = 1; row < values.length; row++) {
-          let object = {}
-          for (let col = 0; col < values[0].length; col++) {
-            let propName = values[0][col]
-            if (propName !== 'id' && propName.endsWith('.id')) continue
-            let propValue = values[row][col]
-            object[propName] = propValue
-          }
-          let unlattened = unflatten(object, { object: true })
+        if (this.savedStream.hasHeaders) {
+          for (let row = 1; row < values.length; row++) {
+            let object = {}
+            for (let col = 0; col < values[0].length; col++) {
+              let propName = values[0][col]
+              if (propName !== 'id' && propName.endsWith('.id')) continue
+              let propValue = values[row][col]
+              object[propName] = propValue
+            }
+            let unlattened = unflatten(object, { object: true })
 
-          data.push(unlattened)
+            data.push(unlattened)
+          }
+        } else {
+          for (let row = 0; row < values.length; row++) {
+            let rowArray = []
+            for (let col = 0; col < values[0].length; col++) {
+              rowArray.push(values[row][col])
+            }
+            data.push(rowArray)
+          }
         }
 
         await this.$store.dispatch('createCommit', {
@@ -316,17 +338,6 @@ export default {
           branchName: this.selectedBranch.name,
           message: this.message
         })
-
-        //        let response = await fetch(`${SERVER_URL}/graphql`, {
-        //   method: 'POST',
-        //   headers: {
-        //     Authorization: 'Bearer ' + token,
-        //     'Content-Type': 'application/json'
-        //   },
-        //   body: JSON.stringify({
-        //     query: query
-        //   })
-        // })
       })
     },
     formatCommitName(id) {

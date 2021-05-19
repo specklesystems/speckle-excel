@@ -7,7 +7,7 @@ export default {
       state.streams.unshift(value)
     },
     REMOVE_STREAM(state, value) {
-      const index = state.streams.indexOf(value)
+      const index = state.streams.findIndex((x) => x.id === value.id)
       if (index > -1) {
         state.streams.splice(index, 1)
       }

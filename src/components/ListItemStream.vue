@@ -113,6 +113,7 @@ export default {
         id: this.stream.id,
         isReceiver: true,
         selection: null,
+        hasHeaders: false,
         selectedBranch: null,
         selectedCommit: null
       })
