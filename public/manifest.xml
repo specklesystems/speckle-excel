@@ -23,6 +23,7 @@
 
   <AppDomains>
     <AppDomain>https://speckle.xyz</AppDomain>
+    <AppDomain>https://latest.speckle.dev</AppDomain>
     <AppDomain>https://localhost:3000</AppDomain>
   </AppDomains>
 

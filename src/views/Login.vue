@@ -7,6 +7,8 @@
           <br />
           Please log in or create an account below
           <br />
+          (it will open a new window)
+          <br />
           👇
         </span>
         <br />

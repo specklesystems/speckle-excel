@@ -32,12 +32,6 @@ const routes = [
     path: '/logout',
     name: 'logout'
   }
-  //{ path: '/index', redirect: '/' } // catch all use case
-  // {
-  //   path: '*',
-  //   name: 'Home',
-  //   component: Home
-  // }
 ]
 
 const router = new VueRouter({
@@ -47,13 +41,12 @@ const router = new VueRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  await store.restored
   if (to.query.access_code) {
-    await store.dispatch('exchangeAccessCode', to.query.access_code)
-    let loggedIn = await store.dispatch('hasValidToken')
-    if (loggedIn) next('/')
-    else next()
-  } else if (to.name !== 'login' && !store.getters.isAuthenticated) {
+    window.Office.context.ui.messageParent(to.query.access_code)
+  }
+
+  await store.restored
+  if (to.name !== 'login' && !store.getters.isAuthenticated) {
     let loggedIn = await store.dispatch('hasValidToken')
     if (loggedIn) next(to)
     else next('/login')

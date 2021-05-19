@@ -5,6 +5,7 @@ import VuexPersistence from 'vuex-persist'
 import ObjectLoader from '@speckle/objectloader'
 import streamsModule from './streams'
 import userModule from './user'
+import router from '../router'
 
 const xml2js = require('xml2js')
 
@@ -95,7 +96,7 @@ export default new Vuex.Store({
   },
   mutations: {},
   actions: {
-    async login() {
+    async login({ dispatch }) {
       //go to login and refresh token
       // Generate random challenge
       var challenge =
@@ -104,8 +105,24 @@ export default new Vuex.Store({
       localStorage.setItem(CHALLENGE, challenge)
       // Send user to auth page
 
-      window.location = `${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`
-      //console.log(`${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`)
+      let dialog
+      window.Office.context.ui.displayDialogAsync(
+        `${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`,
+        {
+          height: 80,
+          width: 30,
+          promptBeforeOpen: false
+        },
+        function (asyncResult) {
+          dialog = asyncResult.value
+          dialog.addEventHandler(window.Office.EventType.DialogMessageReceived, async (args) => {
+            dialog.close()
+            await dispatch('exchangeAccessCode', args.message)
+            await dispatch('hasValidToken')
+            router.push('/')
+          })
+        }
+      )
     },
     async hasValidToken({ state, dispatch }) {
       if (localStorage.getItem(TOKEN) === null) return false
