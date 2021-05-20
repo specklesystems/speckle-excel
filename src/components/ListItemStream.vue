@@ -114,8 +114,8 @@ export default {
         isReceiver: true,
         selection: null,
         hasHeaders: false,
-        selectedBranch: null,
-        selectedCommit: null
+        selectedBranchName: null,
+        selectedCommitId: null
       })
       this.$router.push('/')
     }

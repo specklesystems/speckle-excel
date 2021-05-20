@@ -1,9 +1,9 @@
 <template>
   <div>
-    <div v-if="$apollo.loading" class="mx-5">
-      <v-skeleton-loader type="card, article"></v-skeleton-loader>
+    <div v-if="$apollo.loading" class="mx-0">
+      <v-skeleton-loader type="article"></v-skeleton-loader>
     </div>
-    <v-card v-if="stream" class="pa-5 mb-3" style="transition: all 0.2s">
+    <v-card v-else class="pa-5 mb-3" style="transition: all 0.2s">
       <v-row>
         <v-col class="align-self-center">
           <div class="subtitle-1">
@@ -25,7 +25,7 @@
               small
               icon
               color="primary"
-              :href="serverUrl + `/streams/` + stream.id"
+              :href="`${serverUrl}/streams/${stream.id}/branches/${selectedBranch.name}`"
               target="_blank"
             >
               <v-icon small>mdi-open-in-new</v-icon>
@@ -79,7 +79,7 @@
               "
               v-model="selectedCommit"
               :items="selectedBranch.commits.items"
-              item-value="message"
+              item-value="id"
               solo
               flat
               dense
@@ -208,7 +208,8 @@
 </template>
 <script>
 import streamQuery from '../graphql/stream.gql'
-const unflatten = require('flat').unflatten
+import { send } from '../plugins/excel'
+import gql from 'graphql-tag'
 
 export default {
   props: {
@@ -234,11 +235,42 @@ export default {
       skip() {
         return this.savedStream === null
       }
-      // result() {
-      //   if (this.stream && this.stream.branches) {
-      //     this.selectedBranch = this.stream.branches.items[this.stream.branches.items.length - 1]
-      //   }
-      // }
+    },
+    $subscribe: {
+      streamUpdated: {
+        query: gql`
+          subscription($id: String!) {
+            streamUpdated(streamId: $id)
+          }
+        `,
+        variables() {
+          return {
+            id: this.savedStream.id
+          }
+        },
+        result() {
+          this.$apollo.queries.stream.refetch()
+        }
+      },
+      commitCreated: {
+        query: gql`
+          subscription($streamId: String!) {
+            commitCreated(streamId: $streamId)
+          }
+        `,
+        variables() {
+          return {
+            streamId: this.savedStream.id
+          }
+        },
+        result(commitInfo) {
+          this.$apollo.queries.stream.refetch()
+          if (this.savedStream.isReceiver)
+            this.$store.dispatch('showSnackbar', {
+              message: `New commit on ${this.stream.name} @ ${commitInfo.data.commitCreated.branchName}`
+            })
+        }
+      }
     }
   },
   computed: {
@@ -247,26 +279,41 @@ export default {
     },
     selectedBranch: {
       get() {
-        return this.savedStream.selectedBranch
+        if (!this.stream || !this.stream.branches) return null
+
+        let selectedBranchName = this.savedStream.selectedBranchName
+          ? this.savedStream.selectedBranchName
+          : 'main'
+        const index = this.stream.branches.items.findIndex((x) => x.name === selectedBranchName)
+        if (index > -1) return this.stream.branches.items[index]
+        return this.stream.branches.items[0]
       },
-      // setter
       set(value) {
         let s = { ...this.savedStream }
-        s.selectedBranch = value
-        if (value.commits.items.length > 0) s.selectedCommit = value.commits.items[0]
-        else s.selectedCommit = null
-
+        s.selectedBranchName = value.name
         this.$store.dispatch('updateStream', s)
       }
     },
     selectedCommit: {
       get() {
-        return this.savedStream.selectedCommit
+        if (!this.selectedBranch || !this.selectedBranch.commits) return null
+
+        //not set or latest, return first
+        if (!this.savedStream.selectedCommitId || this.savedStream.selectedCommitId === 'latest')
+          return this.selectedBranch.commits.items[0]
+
+        //try match by id
+        const index = this.selectedBranch.commits.items.findIndex(
+          (x) => x.id === this.savedStream.selectedCommitId
+        )
+        if (index > -1) return this.selectedBranch.commits.items[index]
+
+        return this.selectedBranch.commits.items[0]
       },
-      // setter
       set(value) {
         let s = { ...this.savedStream }
-        s.selectedCommit = value
+        const index = this.selectedBranch.commits.items.findIndex((x) => x.id === value.id)
+        s.selectedCommitId = index === 0 ? 'latest' : value.id
         this.$store.dispatch('updateStream', s)
       }
     }
@@ -301,44 +348,7 @@ export default {
       return this.$store.dispatch('removeStream', this.stream)
     },
     async send() {
-      window.Excel.run(async (context) => {
-        let sheet = context.workbook.worksheets.getItem(this.savedStream.selection.split('!')[0])
-        let range = sheet.getRange(this.savedStream.selection)
-        range.load('values')
-        await context.sync()
-        let values = range.values
-
-        let data = []
-        if (this.savedStream.hasHeaders) {
-          for (let row = 1; row < values.length; row++) {
-            let object = {}
-            for (let col = 0; col < values[0].length; col++) {
-              let propName = values[0][col]
-              if (propName !== 'id' && propName.endsWith('.id')) continue
-              let propValue = values[row][col]
-              object[propName] = propValue
-            }
-            let unlattened = unflatten(object, { object: true })
-
-            data.push(unlattened)
-          }
-        } else {
-          for (let row = 0; row < values.length; row++) {
-            let rowArray = []
-            for (let col = 0; col < values[0].length; col++) {
-              rowArray.push(values[row][col])
-            }
-            data.push(rowArray)
-          }
-        }
-
-        await this.$store.dispatch('createCommit', {
-          object: data,
-          streamId: this.stream.id,
-          branchName: this.selectedBranch.name,
-          message: this.message
-        })
-      })
+      send(this.savedStream, this.stream.id, this.selectedBranch.name, this.message)
     },
     formatCommitName(id) {
       if (this.selectedBranch.commits.items[0].id == id) return 'latest'

@@ -1,5 +1,12 @@
 <template>
   <v-app>
+    <v-snackbar v-model="showSnackbar" bottom :color="snackbar.color" :timeout="snackbar.timeout">
+      <span v-html="snackbar.message" />
+
+      <template #action="">
+        <v-btn text @click.native="showSnackbar = false">Close</v-btn>
+      </template>
+    </v-snackbar>
     <v-navigation-drawer v-if="user" v-model="drawer" app>
       <v-list-item>
         <v-list-item-avatar>
@@ -29,8 +36,14 @@
     </v-navigation-drawer>
     <v-app-bar app color="primary" dark>
       <v-app-bar-nav-icon v-if="isAuthenticated" @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-btn text to="/" active-class="no-active">
-        <v-img contain max-height="30" max-width="30" src="./assets/logo.png" />
+      <v-btn text to="/" active-class="no-active" class="pl-1">
+        <v-img
+          class="mr-1"
+          contain
+          max-height="30"
+          max-width="30"
+          src="./assets/logo-white30.png"
+        />
         <span class="caption"><b>EXCEL</b></span>
         &nbsp;&nbsp;
         <span class="caption">CONNECTOR</span>
@@ -49,6 +62,7 @@ export default {
 
   data: () => ({
     drawer: null,
+    showSnackbar: false,
     items: [
       {
         name: 'Add stream',
@@ -79,6 +93,27 @@ export default {
     background() {
       let theme = this.$vuetify.theme.dark ? 'dark' : 'light'
       return `background-color: ${this.$vuetify.theme.themes[theme].background};`
+    },
+    snackbar() {
+      //defaults
+      var snackbar = {
+        message: '',
+        color: 'success',
+        timeout: 2000
+      }
+
+      if (this.$store.state.snackbar.message) snackbar.message = this.$store.state.snackbar.message
+
+      if (this.$store.state.snackbar.color) snackbar.color = this.$store.state.snackbar.color
+
+      if (this.$store.state.snackbar.message) snackbar.timeout = this.$store.state.snackbar.timeout
+
+      return snackbar
+    }
+  },
+  watch: {
+    snackbar() {
+      if (this.snackbar.message) this.showSnackbar = true
     }
   }
 }

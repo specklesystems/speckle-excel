@@ -149,7 +149,7 @@ export default {
     },
     async bake() {
       this.progress = true
-      await bake(this.object.data, this.streamId, this.$store)
+      await bake(this.object.data, this.streamId)
       this.progress = false
     }
   }

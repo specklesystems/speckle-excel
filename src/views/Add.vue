@@ -9,11 +9,13 @@
     <v-row>
       <v-col cols="12">
         <v-card elevation="0" color="transparent">
-          <div v-if="$apollo.loading" class="mx-5">
-            <v-skeleton-loader type="card, article, article"></v-skeleton-loader>
+          <div v-if="$apollo.loading" class="mx-4">
+            <v-skeleton-loader class="mt-3" type="article"></v-skeleton-loader>
+            <v-skeleton-loader class="mt-3" type="article"></v-skeleton-loader>
+            <v-skeleton-loader class="mt-3" type="article"></v-skeleton-loader>
           </div>
-          <v-card-text v-if="streams && streams.items" class="mt-0 pt-3">
-            <div v-for="(stream, i) in streams.items" :key="i">
+          <v-card-text v-else class="mt-0 pt-3">
+            <div v-for="(stream, i) in filteredStreams" :key="i">
               <list-item-stream :stream="stream"></list-item-stream>
             </div>
             <infinite-loading
@@ -84,6 +86,11 @@ export default {
   computed: {
     isAuthenticated() {
       return this.$store.getters.isAuthenticated
+    },
+    filteredStreams() {
+      return this.streams.items.filter(
+        (x) => this.$store.state.streams.streams.findIndex((y) => y.id === x.id) === -1
+      )
     }
   },
   methods: {

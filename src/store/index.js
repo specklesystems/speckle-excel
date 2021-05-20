@@ -24,32 +24,32 @@ const vuexLocal = new VuexPersistence({
   modules: ['user']
 })
 
-console.log('loaded')
-
 const vuexExcel = new VuexPersistence({
   restoreState: async () => {
     let state = null
     await window.Office.onReady()
-    if (!window.Excel) return null
-    await window.Excel.run(async (context) => {
-      let parts = context.workbook.customXmlParts.getByNamespace(XML_NS)
-      let partsCount = parts.getCount()
-      await context.sync()
+    if (!window.Excel) {
+      console.log('No excel detected, skipping store')
+      return null
+    }
+    try {
+      await window.Excel.run(async (context) => {
+        let parts = context.workbook.customXmlParts.getByNamespace(XML_NS)
+        let partsCount = parts.getCount()
+        await context.sync()
+        if (partsCount.value !== 1) return null
 
-      if (partsCount.value !== 1) return null
-
-      let xml = parts.getOnlyItem()
-      let xmlBlob = xml.getXml()
-      await context.sync()
-      var parser = new xml2js.Parser({ explicitArray: false })
-      try {
+        let xml = parts.getOnlyItem()
+        let xmlBlob = xml.getXml()
+        await context.sync()
+        var parser = new xml2js.Parser({ explicitArray: false })
         parser.parseString(xmlBlob.value, (err, result) => {
           state = JSON.parse(result.SpeckleData.state)
         })
-      } catch (e) {
-        console.log(e)
-      }
-    })
+      })
+    } catch (e) {
+      console.log(e)
+    }
 
     if (state) return state
     return null
@@ -58,12 +58,12 @@ const vuexExcel = new VuexPersistence({
     await window.Excel.run(async (context) => {
       let xmlParts = context.workbook.customXmlParts
       let parts = context.workbook.customXmlParts.getByNamespace(XML_NS)
-      let partsCount = parts.getCount()
+
+      parts.load('items')
       await context.sync()
 
-      if (partsCount.value === 1) {
-        let xml = parts.getOnlyItem()
-        xml.delete()
+      for (let part of parts.items) {
+        part.delete()
         await context.sync()
       }
 
@@ -89,12 +89,18 @@ const vuexExcel = new VuexPersistence({
 })
 
 export default new Vuex.Store({
-  state: {},
+  state: {
+    snackbar: {}
+  },
   plugins: [vuexLocal.plugin, vuexExcel.plugin],
   getters: {
     serverUrl: () => SERVER_URL
   },
-  mutations: {},
+  mutations: {
+    SET_SNACKBAR(state, value) {
+      state.snackbar = value
+    }
+  },
   actions: {
     async login({ dispatch }) {
       //go to login and refresh token
@@ -250,6 +256,9 @@ export default new Vuex.Store({
         streamId: streamId,
         objectId: objectId
       })
+    },
+    showSnackbar({ commit }, value) {
+      commit('SET_SNACKBAR', value)
     }
   },
   modules: {

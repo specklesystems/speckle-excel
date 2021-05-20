@@ -121,7 +121,7 @@ export default {
     },
     async bake() {
       this.progress = true
-      await bake(this.value, this.streamId, this.$store)
+      await bake(this.value, this.streamId)
       this.progress = false
     }
   }
