@@ -33,6 +33,7 @@
     <v-card-text v-if="localExpand && currentLimit < value.length">
       <v-btn small @click="loadMore">Show more</v-btn>
     </v-card-text>
+    <modal ref="modal" />
   </v-card>
 </template>
 <script>
@@ -40,6 +41,7 @@ import { bake } from '../plugins/excel'
 export default {
   name: 'ObjectListViewer',
   components: {
+    Modal: () => import('./Modal'),
     ObjectSpeckleViewer: () => import('./ObjectSpeckleViewer'),
     ObjectSimpleViewer: () => import('./ObjectSimpleViewer'),
     ObjectValueViewer: () => import('./ObjectValueViewer')
@@ -121,7 +123,7 @@ export default {
     },
     async bake() {
       this.progress = true
-      await bake(this.value, this.streamId)
+      await bake(this.value, this.streamId, this.$refs.modal)
       this.progress = false
     }
   }

@@ -32,6 +32,7 @@
         :stream-id="streamId"
       ></component>
     </v-card-text>
+    <modal ref="modal" />
   </v-card>
 </template>
 <script>
@@ -40,6 +41,7 @@ import { bake } from '../plugins/excel'
 export default {
   name: 'ObjectSimpleViewer',
   components: {
+    Modal: () => import('./Modal'),
     ObjectListViewer: () => import('./ObjectListViewer'),
     ObjectSpeckleViewer: () => import('./ObjectSpeckleViewer'),
     ObjectValueViewer: () => import('./ObjectValueViewer')
@@ -119,7 +121,7 @@ export default {
     },
     async bake() {
       this.progress = true
-      await bake(this.value, this.streamId)
+      await bake(this.value, this.streamId, this.$refs.modal)
       this.progress = false
     }
   }

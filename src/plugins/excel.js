@@ -3,15 +3,14 @@ import store from '../store/index.js'
 
 const unflatten = require('flat').unflatten
 
-let rowIndex = 1
 let ignoredProps = ['id', 'reference', 'totalChildrenCount']
-let headers = []
-let streamId, sheet, rowStart, colStart
 
-async function bakeObject(item) {
+let streamId, sheet, rowStart, colStart, arrayData
+
+async function objectToArray(item) {
   if (Array.isArray(item)) {
     for (let o of item) {
-      await bakeObject(o)
+      await objectToArray(o)
     }
   } else if (item.speckle_type && item.speckle_type == 'reference') {
     let loader = await store.dispatch('getObject', {
@@ -22,26 +21,22 @@ async function bakeObject(item) {
     for await (let o of loader.getObjectIterator()) {
       if (o.totalChildrenCount > 0) continue
 
-      await bakeObject(o)
+      await objectToArray(o)
     }
   } else {
     let flat = flatten(item)
-
+    let rowData = []
     for (const [key, value] of Object.entries(flat)) {
       if (ignoredProps.includes(key)) continue
 
-      let colIndex = headers.findIndex((x) => x === key)
+      let colIndex = arrayData[0].findIndex((x) => x === key)
       if (colIndex === -1) {
-        colIndex = headers.length
-        let keyRange = sheet.getCell(rowStart, colIndex + colStart)
-        keyRange.values = key
-        headers.push(key)
+        colIndex = arrayData[0].length
+        arrayData[0].push(key)
       }
-
-      let valueRange = sheet.getCell(rowIndex + rowStart, colIndex + colStart)
-      valueRange.values = value
+      rowData[colIndex] = value
     }
-    rowIndex++
+    arrayData.push(rowData)
   }
 }
 
@@ -63,7 +58,7 @@ async function bakeArray(data) {
   }
   //it's a list of lists
   else {
-    rowIndex = 0
+    let rowIndex = 0
     for (let array of data) {
       let colIndex = 0
       for (let item of array) {
@@ -88,7 +83,7 @@ function hasObjects(data) {
   return false
 }
 
-export async function bake(data, _streamId) {
+export async function bake(data, _streamId, modal) {
   try {
     await window.Excel.run(async (context) => {
       let range = context.workbook.getSelectedRange()
@@ -102,17 +97,33 @@ export async function bake(data, _streamId) {
       rowStart = range.rowIndex
       colStart = range.columnIndex
 
-      rowIndex = 1
-      headers = []
       streamId = _streamId
+      arrayData = [[]]
 
-      if (hasObjects(data)) await bakeObject(data)
-      else await bakeArray(data)
+      //if the incoming data has objects we need to flatten them to an array
+      //otherwise we just output it
+      if (hasObjects(data)) await objectToArray(data)
+      else arrayData = data
 
+      if (arrayData[0].length > 25 || arrayData.length > 50) {
+        let dialog = await modal.open(
+          'Do you want to continue?',
+          `You are about to write ${arrayData[0].length} columns and ${arrayData.length} rows`
+        )
+        if (!dialog.result) {
+          store.dispatch('showSnackbar', {
+            message: 'Operation cancelled'
+          })
+          return
+        }
+      }
+
+      await bakeArray(arrayData)
       await context.sync()
-    })
-    store.dispatch('showSnackbar', {
-      message: 'Data received successfully'
+
+      store.dispatch('showSnackbar', {
+        message: 'Data received successfully'
+      })
     })
   } catch (e) {
     //pokemon

@@ -7,6 +7,7 @@
         <v-btn text @click.native="showSnackbar = false">Close</v-btn>
       </template>
     </v-snackbar>
+
     <v-navigation-drawer v-if="user" v-model="drawer" app>
       <v-list-item>
         <v-list-item-avatar>
@@ -59,7 +60,7 @@
 <script>
 export default {
   name: 'App',
-
+  components: {},
   data: () => ({
     drawer: null,
     showSnackbar: false,
