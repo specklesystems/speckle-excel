@@ -41,10 +41,13 @@ const router = new VueRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  console.log('router')
-  console.log(to)
   if (to.query.access_code) {
-    window.Office.context.ui.messageParent(to.query.access_code)
+    try {
+      console.log('sending message to parent')
+      window.Office.context.ui.messageParent(to.query.access_code)
+    } catch (error) {
+      console.log(console.error)
+    }
   }
 
   await store.restored

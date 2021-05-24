@@ -19,10 +19,11 @@
   <IconUrl DefaultValue="https://speckle-excel.netlify.app/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://speckle-excel.netlify.app/assets/icon-64.png"/>
 
-<SupportUrl DefaultValue="https://speckle.guide/excel" />
+<SupportUrl DefaultValue="https://speckle.guide/user/excel.html" />
 
   <AppDomains>
     <AppDomain>https://speckle-excel.netlify.app</AppDomain>
+    <AppDomain>https://latest.speckle.dev</AppDomain>
   </AppDomains>
 
   <Hosts>

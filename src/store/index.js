@@ -109,22 +109,20 @@ export default new Vuex.Store({
         Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
       // Save challenge in localStorage
       localStorage.setItem(CHALLENGE, challenge)
+
       // Send user to auth page
 
-      let dialog
-      window.Office.context.ui.displayDialogAsync(
+      await window.Office.context.ui.displayDialogAsync(
         `${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`,
         {
           height: 80,
           width: 30,
           promptBeforeOpen: false
         },
-        function (asyncResult) {
-          console.log(asyncResult)
-          console.log(asyncResult.value)
-          dialog = asyncResult.value
+        (asyncResult) => {
+          let dialog = asyncResult.value
           dialog.addEventHandler(window.Office.EventType.DialogMessageReceived, async (args) => {
-            console.log(args)
+            console.log('dialog message handled')
             dialog.close()
             await dispatch('exchangeAccessCode', args.message)
             await dispatch('hasValidToken')
