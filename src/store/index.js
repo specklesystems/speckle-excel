@@ -114,7 +114,7 @@ export default new Vuex.Store({
     async login({ dispatch }) {
       // Send user to auth page
       await window.Office.context.ui.displayDialogAsync(
-        `${window.location.origin}/redirect`,
+        `${window.location.origin}/#/redirect`,
         {
           height: 80,
           width: 30,
