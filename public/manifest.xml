@@ -19,7 +19,7 @@
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-80.png"/>
 
-<SupportUrl DefaultValue="https://speckle.guide/excel" />
+<SupportUrl DefaultValue="https://speckle.guide/user/excel.html" />
 
   <AppDomains>
     <AppDomain>https://speckle.xyz</AppDomain>
