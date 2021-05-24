@@ -197,8 +197,7 @@
 
           <v-text-field
             v-model="message"
-            class="pt-0 mt-0 ml-3"
-            label="Message"
+            class="pt-0 mt-0 ml-3 caption"
             placeholder="Data from Excel"
           ></v-text-field>
         </v-col>

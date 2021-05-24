@@ -27,7 +27,7 @@ async function objectToArray(item) {
     let flat = flatten(item)
     let rowData = []
     for (const [key, value] of Object.entries(flat)) {
-      if (ignoredProps.includes(key)) continue
+      if (ignoredProps.findIndex((x) => key.endsWith(x)) !== -1) continue
 
       let colIndex = arrayData[0].findIndex((x) => x === key)
       if (colIndex === -1) {
@@ -63,7 +63,7 @@ async function bakeArray(data) {
       let colIndex = 0
       for (let item of array) {
         let valueRange = sheet.getCell(rowIndex + rowStart, colIndex + colStart)
-        valueRange.values = item
+        valueRange.values = Array.isArray(item) ? JSON.stringify(item) : item
         colIndex++
       }
       rowIndex++
