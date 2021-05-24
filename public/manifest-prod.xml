@@ -22,9 +22,6 @@
 <SupportUrl DefaultValue="https://speckle.guide/excel" />
 
   <AppDomains>
-    <AppDomain>https://speckle.xyz</AppDomain>
-    <AppDomain>https://latest.speckle.dev</AppDomain>
-    <AppDomain>https://localhost:3000</AppDomain>
     <AppDomain>https://speckle-excel.netlify.app</AppDomain>
   </AppDomains>
 
