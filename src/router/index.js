@@ -41,6 +41,8 @@ const router = new VueRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  console.log('router')
+  console.log(to)
   if (to.query.access_code) {
     window.Office.context.ui.messageParent(to.query.access_code)
   }
