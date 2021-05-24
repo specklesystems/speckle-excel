@@ -14,7 +14,7 @@
         </span>
         <span class="subtitle">👇</span>
         <br />
-        <v-btn large class="mt-5" color="primary" @click="login">Log in</v-btn>
+        <v-btn large class="mt-5" color="primary" @click="login">Open Log in window</v-btn>
       </v-col>
     </v-row>
   </v-container>
