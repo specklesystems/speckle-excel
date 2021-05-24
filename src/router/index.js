@@ -29,6 +29,10 @@ const routes = [
     component: () => import('../views/Login.vue')
   },
   {
+    path: '/redirect',
+    name: 'redirect'
+  },
+  {
     path: '/logout',
     name: 'logout'
   }
@@ -42,13 +46,11 @@ const router = new VueRouter({
 
 router.beforeEach(async (to, from, next) => {
   if (to.query.access_code) {
-    try {
-      console.log('sending message to parent')
-      window.Office.context.ui.messageParent(to.query.access_code)
-    } catch (error) {
-      console.log(console.error)
-    }
+    console.log('sending message to parent')
+    window.Office.context.ui.messageParent(to.query.access_code)
   }
+
+  if (to.name === 'redirect') await store.dispatch('redirect')
 
   await store.restored
   if (to.name !== 'login' && !store.getters.isAuthenticated) {
