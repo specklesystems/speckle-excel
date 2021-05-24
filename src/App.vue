@@ -116,13 +116,6 @@ export default {
     snackbar() {
       if (this.snackbar.message) this.showSnackbar = true
     }
-  },
-  mounted() {
-    console.log('app')
-    console.log(this.$route.query)
-    if (this.$route.access_code) {
-      window.Office.context.ui.messageParent(this.$route.query.access_code)
-    }
   }
 }
 </script>

@@ -120,8 +120,11 @@ export default new Vuex.Store({
           promptBeforeOpen: false
         },
         function (asyncResult) {
+          console.log(asyncResult)
+          console.log(asyncResult.value)
           dialog = asyncResult.value
           dialog.addEventHandler(window.Office.EventType.DialogMessageReceived, async (args) => {
+            console.log(args)
             dialog.close()
             await dispatch('exchangeAccessCode', args.message)
             await dispatch('hasValidToken')
