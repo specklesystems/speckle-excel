@@ -102,19 +102,19 @@ export default new Vuex.Store({
     }
   },
   actions: {
-    async redirect() {
+    async redirect(_, challenge) {
       //go to login and refresh token
+      window.location = `${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`
+    },
+    async login({ dispatch }) {
       // Generate random challenge
       var challenge =
         Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
       // Save challenge in localStorage
       localStorage.setItem(CHALLENGE, challenge)
-      window.location = `${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`
-    },
-    async login({ dispatch }) {
       // Send user to auth page
       await window.Office.context.ui.displayDialogAsync(
-        `${window.location.origin}/redirect`,
+        `${window.location.origin}/redirect?challenge=${challenge}`,
         {
           height: 80,
           width: 30,
@@ -123,7 +123,6 @@ export default new Vuex.Store({
         (asyncResult) => {
           let dialog = asyncResult.value
           dialog.addEventHandler(window.Office.EventType.DialogMessageReceived, async (args) => {
-            console.log('dialog message handled')
             dialog.close()
             await dispatch('exchangeAccessCode', args.message)
             await dispatch('hasValidToken')
@@ -195,7 +194,6 @@ export default new Vuex.Store({
         })
       })
       let data = await response.json()
-      console.log(data)
       let objectId = data.data.objectCreate[0]
 
       query = `mutation commitCreate($myCommit: CommitCreateInput!){ commitCreate(commit: $myCommit)}`

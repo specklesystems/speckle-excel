@@ -2,12 +2,15 @@
   <v-container>
     <v-row align="center">
       <v-col cols="12" align="center" class="mt-5">
-        <span class="subtitle">
-          You have {{ streams.length === 0 ? 'no' : streams.length }} stream{{
-            streams.length === 1 ? '' : 's'
-          }}
+        <span v-if="streams && streams.length > 0" class="subtitle">
+          You have {{ streams.length }} stream{{ streams.length === 1 ? '' : 's' }}
           in this document 🙌
         </span>
+
+        <div v-else>
+          <p class="subtitle">You have no streams in this document</p>
+          <v-btn large class="mt-5" color="primary" to="add">Add a stream</v-btn>
+        </div>
       </v-col>
     </v-row>
 
