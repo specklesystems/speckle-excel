@@ -123,7 +123,6 @@ export default new Vuex.Store({
         (asyncResult) => {
           let dialog = asyncResult.value
           dialog.addEventHandler(window.Office.EventType.DialogMessageReceived, async (args) => {
-            console.log('dialog message handled')
             dialog.close()
             await dispatch('exchangeAccessCode', args.message)
             await dispatch('hasValidToken')
@@ -195,7 +194,6 @@ export default new Vuex.Store({
         })
       })
       let data = await response.json()
-      console.log(data)
       let objectId = data.data.objectCreate[0]
 
       query = `mutation commitCreate($myCommit: CommitCreateInput!){ commitCreate(commit: $myCommit)}`

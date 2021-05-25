@@ -30,8 +30,7 @@ const routes = [
   },
   {
     path: '/redirect',
-    name: 'redirect',
-    component: () => import('../views/Redirect.vue')
+    name: 'redirect'
   },
   {
     path: '/logout',
@@ -47,7 +46,6 @@ const router = new VueRouter({
 
 router.beforeEach(async (to, from, next) => {
   if (to.query.access_code) {
-    console.log('sending message to parent')
     window.Office.context.ui.messageParent(to.query.access_code)
     return
   } else if (to.name === 'redirect') {

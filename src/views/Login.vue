@@ -3,18 +3,27 @@
     <v-row align="center" style="height: 100%">
       <v-col class="py-2" align="center">
         <span class="subtitle">
-          Hello,
+          Hello!
           <br />
-          welcome to the Speckle connector for Excel! 📊
+          Welcome to the Speckle connector for Excel 📊
+          <br />
           <br />
         </span>
         <span class="caption">
-          Please login or register below, a Speckle account is needed to use this plugin.
+          Please login or register below to start streaming data.
+          <br />
+          New here? Make sure to
+          <a href="https://speckle.guide/user/excel.html" target="_blank">check our docs!</a>
+          📚
           <br />
         </span>
         <span class="subtitle">👇</span>
         <br />
-        <v-btn large class="mt-5" color="primary" @click="login">Open login window</v-btn>
+
+        <v-btn large class="mt-5" color="primary" @click="login">Login</v-btn>
+        <span class="caption">
+          <br />
+        </span>
       </v-col>
     </v-row>
   </v-container>

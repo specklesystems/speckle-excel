@@ -2,7 +2,15 @@
   <v-container>
     <v-row align="center">
       <v-col cols="12" align="center" class="mt-5">
-        <span class="subtitle">Click on a stream to add it to this document. 👇</span>
+        <p v-if="filteredStreams && filteredStreams.length > 0" class="subtitle">
+          Click on a stream to add it to this document. 👇
+        </p>
+        <div v-else>
+          <p class="subtitle">You don't have any streams 😟, don't worry!</p>
+          <v-btn large class="mt-5" color="primary" :href="serverUrl" target="_blank">
+            Create a new stream
+          </v-btn>
+        </div>
       </v-col>
     </v-row>
 
@@ -87,7 +95,11 @@ export default {
     isAuthenticated() {
       return this.$store.getters.isAuthenticated
     },
+    serverUrl() {
+      return this.$store.getters.serverUrl
+    },
     filteredStreams() {
+      if (!this.streams.items) return null
       return this.streams.items.filter(
         (x) => this.$store.state.streams.streams.findIndex((y) => y.id === x.id) === -1
       )
