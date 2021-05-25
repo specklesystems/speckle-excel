@@ -18,6 +18,9 @@
 <script>
 export default {
   name: 'Redirect',
+  mounted() {
+    this.$store.dispatch('redirect')
+  },
 
   methods: {
     redirect() {
