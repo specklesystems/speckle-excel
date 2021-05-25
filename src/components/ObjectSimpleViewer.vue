@@ -32,7 +32,7 @@
         :stream-id="streamId"
       ></component>
     </v-card-text>
-    <modal ref="modal" />
+    <filter-modal ref="modal" />
   </v-card>
 </template>
 <script>
@@ -41,7 +41,7 @@ import { bake } from '../plugins/excel'
 export default {
   name: 'ObjectSimpleViewer',
   components: {
-    Modal: () => import('./Modal'),
+    FilterModal: () => import('./FilterModal'),
     ObjectListViewer: () => import('./ObjectListViewer'),
     ObjectSpeckleViewer: () => import('./ObjectSpeckleViewer'),
     ObjectValueViewer: () => import('./ObjectValueViewer')

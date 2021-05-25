@@ -18,7 +18,7 @@
         indeterminate
         color="grey"
       ></v-progress-circular>
-      <v-btn v-if="object && !progress" icon small @click="bake">
+      <v-btn v-else icon small @click="bake">
         <v-icon small>mdi-download</v-icon>
       </v-btn>
     </v-card-title>
@@ -37,7 +37,7 @@
         :stream-id="streamId"
       ></component>
     </v-card-text>
-    <modal ref="modal" />
+    <filter-modal ref="modal" />
   </v-card>
 </template>
 <script>
@@ -47,7 +47,7 @@ import { bake } from '../plugins/excel'
 export default {
   name: 'ObjectSpeckleViewer',
   components: {
-    Modal: () => import('./Modal'),
+    FilterModal: () => import('./FilterModal'),
     ObjectListViewer: () => import('./ObjectListViewer'),
     ObjectSimpleViewer: () => import('./ObjectSimpleViewer'),
     ObjectValueViewer: () => import('./ObjectValueViewer')
