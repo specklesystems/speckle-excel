@@ -211,7 +211,8 @@ export default new Vuex.Store({
               streamId: streamId,
               branchName: branchName,
               objectId: objectId,
-              message: message ? message : 'Data from Excel'
+              message: message ? message : 'Data from Excel',
+              sourceApplication: 'excel'
             }
           }
         })
