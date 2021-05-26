@@ -188,7 +188,7 @@ export default new Vuex.Store({
           variables: {
             object: {
               streamId: streamId,
-              objects: [{ data: object }]
+              objects: [{ data: object, speckle_type: 'Base' }]
             }
           }
         })
@@ -249,12 +249,13 @@ export default new Vuex.Store({
         context.dispatch('logout')
       }
     },
-    async getObject(context, { streamId, objectId }) {
+    async getObject(context, { streamId, objectId, options }) {
       return new ObjectLoader({
         serverUrl: process.env.VUE_APP_SERVER_URL,
         token: localStorage.getItem(TOKEN),
         streamId: streamId,
-        objectId: objectId
+        objectId: objectId,
+        options: options
       })
     },
     showSnackbar({ commit }, value) {

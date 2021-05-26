@@ -10,6 +10,5 @@ module.exports = {
       'Access-Control-Allow-Origin': '*'
     }
   },
-
-  transpileDependencies: ['vuetify']
+  transpileDependencies: ['vuetify', '@speckle/objectloader']
 }

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="$apollo.loading" class="mx-0">
+    <div v-if="$apollo.loading" class="mx-0 mb-3">
       <v-skeleton-loader type="article"></v-skeleton-loader>
     </div>
     <v-card v-else class="pa-5 mb-3" style="transition: all 0.2s">
@@ -226,6 +226,7 @@ export default {
     stream: {
       prefetch: true,
       query: streamQuery,
+      fetchPolicy: 'network-only',
       variables() {
         return {
           id: this.savedStream.id
@@ -233,6 +234,9 @@ export default {
       },
       skip() {
         return this.savedStream === null
+      },
+      result() {
+        console.log('completed!')
       }
     },
     $subscribe: {

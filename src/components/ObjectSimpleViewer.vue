@@ -11,14 +11,15 @@
           {{ localExpand ? 'mdi-minus' : 'mdi-plus' }}
         </v-icon>
       </v-chip>
-      <v-progress-circular
-        v-if="progress"
-        size="20"
-        class="ml-1"
-        indeterminate
-        color="grey"
-      ></v-progress-circular>
-      <v-btn v-else icon small @click="bake">
+      <v-dialog v-model="progress" persistent>
+        <v-card class="pt-3">
+          <v-card-text class="caption">
+            Receiving data from the Speckleverse...
+            <v-progress-linear class="mt-2" indeterminate color="primary"></v-progress-linear>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
+      <v-btn icon small @click="bake">
         <v-icon small>mdi-download</v-icon>
       </v-btn>
     </v-card-title>
@@ -32,7 +33,7 @@
         :stream-id="streamId"
       ></component>
     </v-card-text>
-    <modal ref="modal" />
+    <filter-modal ref="modal" />
   </v-card>
 </template>
 <script>
@@ -41,7 +42,7 @@ import { bake } from '../plugins/excel'
 export default {
   name: 'ObjectSimpleViewer',
   components: {
-    Modal: () => import('./Modal'),
+    FilterModal: () => import('./FilterModal'),
     ObjectListViewer: () => import('./ObjectListViewer'),
     ObjectSpeckleViewer: () => import('./ObjectSpeckleViewer'),
     ObjectValueViewer: () => import('./ObjectValueViewer')

@@ -1,43 +1,50 @@
+/* eslint-disable no-unreachable */
 import flatten from 'flat'
 import store from '../store/index.js'
 
 const unflatten = require('flat').unflatten
 
-let ignoredProps = ['id', 'reference', 'totalChildrenCount']
+let ignoreEndsWithProps = ['id', 'totalChildrenCount']
 
-let streamId, sheet, rowStart, colStart, arrayData
+let streamId, sheet, rowStart, colStart, arrayData, headerIndices
 
-async function objectToArray(item) {
+async function flattenData(item) {
   if (Array.isArray(item)) {
     for (let o of item) {
-      await objectToArray(o)
-    }
-  } else if (item.speckle_type && item.speckle_type == 'reference') {
-    let loader = await store.dispatch('getObject', {
-      streamId: streamId,
-      objectId: item.referencedId
-    })
-
-    for await (let o of loader.getObjectIterator()) {
-      if (o.totalChildrenCount > 0) continue
-
-      await objectToArray(o)
+      await flattenSingle(o)
     }
   } else {
-    let flat = flatten(item)
-    let rowData = []
-    for (const [key, value] of Object.entries(flat)) {
-      if (ignoredProps.findIndex((x) => key.endsWith(x)) !== -1) continue
-
-      let colIndex = arrayData[0].findIndex((x) => x === key)
-      if (colIndex === -1) {
-        colIndex = arrayData[0].length
-        arrayData[0].push(key)
-      }
-      rowData[colIndex] = value
-    }
-    arrayData.push(rowData)
+    await flattenSingle(item)
   }
+}
+
+async function flattenSingle(item) {
+  if (item.speckle_type && item.speckle_type == 'reference') {
+    let loader = await store.dispatch('getObject', {
+      streamId: streamId,
+      objectId: item.referencedId,
+      options: {
+        fullyTraverseArrays: false,
+        excludeProps: ['displayValue', 'displayMesh', '__closure', 'elements']
+      }
+    })
+
+    item = await loader.getAndConstructObject()
+  }
+
+  let flat = flatten(item)
+  let rowData = []
+  for (const [key, value] of Object.entries(flat)) {
+    if (ignoreEndsWithProps.findIndex((x) => key.endsWith(x)) !== -1) continue
+
+    let colIndex = arrayData[0].findIndex((x) => x === key)
+    if (colIndex === -1) {
+      colIndex = arrayData[0].length
+      arrayData[0].push(key)
+    }
+    rowData[colIndex] = value
+  }
+  arrayData.push(rowData)
 }
 
 //called if the received data does not contain objects => it's a table, a list or a single value
@@ -56,14 +63,18 @@ async function bakeArray(data) {
       colIndex++
     }
   }
-  //it's a list of lists
+  //it's a list of lists aka table
   else {
     let rowIndex = 0
     for (let array of data) {
       let colIndex = 0
+      let actualColIndex = 0
       for (let item of array) {
-        let valueRange = sheet.getCell(rowIndex + rowStart, colIndex + colStart)
-        valueRange.values = Array.isArray(item) ? JSON.stringify(item) : item
+        if (headerIndices.length === 0 || headerIndices.includes(colIndex)) {
+          let valueRange = sheet.getCell(rowIndex + rowStart, actualColIndex + colStart)
+          valueRange.values = Array.isArray(item) ? JSON.stringify(item) : item
+          actualColIndex++
+        }
         colIndex++
       }
       rowIndex++
@@ -71,7 +82,30 @@ async function bakeArray(data) {
   }
 }
 
+function headerListToTree(headers) {
+  let tree = [{ id: 0, name: 'all fields', fullname: '', children: [] }]
+  let i = 1
+  for (let header of headers) {
+    var parts = header.split('.')
+    let leaf = tree[0].children
+    let partIndex = 1
+    for (let part of parts) {
+      let index = leaf.findIndex((x) => x.name === part)
+      if (index === -1) {
+        let fullname = parts.slice(0, partIndex).join('.')
+        leaf.push({ id: i, name: part, fullname: fullname, children: [] })
+        index = leaf.length - 1
+        i++
+      }
+      partIndex++
+      leaf = leaf[index].children
+    }
+  }
+  return tree
+}
+
 //recursively goes through data to check if it contains objects
+//guess it could be improved
 function hasObjects(data) {
   if (!Array.isArray(data) && typeof data === 'object') return true
 
@@ -99,16 +133,21 @@ export async function bake(data, _streamId, modal) {
 
       streamId = _streamId
       arrayData = [[]]
+      headerIndices = []
 
       //if the incoming data has objects we need to flatten them to an array
       //otherwise we just output it
-      if (hasObjects(data)) await objectToArray(data)
-      else arrayData = data
+      let isTabularData = true
+      if (hasObjects(data)) {
+        isTabularData = false
+        await flattenData(data)
+      } else arrayData = data
 
-      if (arrayData[0].length > 25 || arrayData.length > 50) {
+      if (!isTabularData && arrayData[0].length > 25) {
+        let headers = headerListToTree(arrayData[0])
         let dialog = await modal.open(
-          'Do you want to continue?',
-          `You are about to write ${arrayData[0].length} columns and ${arrayData.length} rows`
+          headers,
+          `You are about to receive ${arrayData[0].length} columns and ${arrayData.length} rows, you can filter them below.`
         )
         if (!dialog.result) {
           store.dispatch('showSnackbar', {
@@ -116,6 +155,8 @@ export async function bake(data, _streamId, modal) {
           })
           return
         }
+        //construct a list of the index of each header to include
+        for (let item of dialog.items) headerIndices.push(arrayData[0].indexOf(item))
       }
 
       await bakeArray(arrayData)
@@ -125,6 +166,7 @@ export async function bake(data, _streamId, modal) {
         message: 'Data received successfully'
       })
     })
+    // eslint-disable-next-line no-unreachable
   } catch (e) {
     //pokemon
     console.log(e)
@@ -150,11 +192,11 @@ export async function send(savedStream, streamId, branchName, message) {
           let object = {}
           for (let col = 0; col < values[0].length; col++) {
             let propName = values[0][col]
-            if (propName !== 'id' && propName.endsWith('.id')) continue
+            //if (propName !== 'id' && propName.endsWith('.id')) continue
             let propValue = values[row][col]
             object[propName] = propValue
           }
-          let unlattened = unflatten(object, { object: true })
+          let unlattened = unflatten(object)
 
           data.push(unlattened)
         }
