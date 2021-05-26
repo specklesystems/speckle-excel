@@ -10,21 +10,10 @@ let ignoreEndsWithProps = ['id', 'reference', 'totalChildrenCount']
 
 let streamId, sheet, rowStart, colStart, arrayData, headerIndices
 
-async function flattenObjects(item) {
+async function flattenData(item) {
   if (Array.isArray(item)) {
     for (let o of item) {
-      await flattenObjects(o)
-    }
-  } else if (item.speckle_type && item.speckle_type == 'reference') {
-    let loader = await store.dispatch('getObject', {
-      streamId: streamId,
-      objectId: item.referencedId
-    })
-
-    for await (let o of loader.getObjectIterator()) {
-      if (o.totalChildrenCount > 0) continue
-
-      await flattenObjects(o)
+      await flattenSingle(o)
     }
   } else {
     flattenSingle(item)
@@ -32,6 +21,15 @@ async function flattenObjects(item) {
 }
 
 async function flattenSingle(item) {
+  if (item.speckle_type && item.speckle_type == 'reference') {
+    let loader = await store.dispatch('getObject', {
+      streamId: streamId,
+      objectId: item.referencedId
+    })
+
+    item = await loader.getAndConstructObject()
+  }
+
   let flat = flatten(item)
   let rowData = []
   for (const [key, value] of Object.entries(flat)) {
@@ -50,43 +48,6 @@ async function flattenSingle(item) {
   }
   arrayData.push(rowData)
 }
-
-// async function expandReferences(item) {
-//   if (Array.isArray(item)) {
-//     for (let o of item) {
-//       await expandReferences(o)
-//     }
-//   } else if (item.speckle_type && item.speckle_type == 'reference') {
-//     let loader = await store.dispatch('getObject', {
-//       streamId: streamId,
-//       objectId: item.referencedId
-//     })
-
-//     for await (let o of loader.getObjectIterator()) {
-//       if (o.totalChildrenCount > 0) continue
-
-//       await objectToArray(o)
-//     }
-//   } else {
-//     let flat = flatten(item)
-//     let rowData = []
-//     for (const [key, value] of Object.entries(flat)) {
-//       if (
-//         ignoreEndsWithProps.findIndex((x) => key.endsWith(x)) !== -1 ||
-//         ignoreStartsWithProps.findIndex((x) => key.startsWith(x)) !== -1
-//       )
-//         continue
-
-//       let colIndex = arrayData[0].findIndex((x) => x === key)
-//       if (colIndex === -1) {
-//         colIndex = arrayData[0].length
-//         arrayData[0].push(key)
-//       }
-//       rowData[colIndex] = value
-//     }
-//     arrayData.push(rowData)
-//   }
-// }
 
 //called if the received data does not contain objects => it's a table, a list or a single value
 async function bakeArray(data) {
@@ -124,6 +85,7 @@ async function bakeArray(data) {
 }
 
 //recursively goes through data to check if it contains objects
+//guess it could be improved
 function hasObjects(data) {
   if (!Array.isArray(data) && typeof data === 'object') return true
 
@@ -155,7 +117,7 @@ export async function bake(data, _streamId, modal) {
 
       //if the incoming data has objects we need to flatten them to an array
       //otherwise we just output it
-      if (hasObjects(data)) await flattenObjects(data)
+      if (hasObjects(data)) await flattenData(data)
       else arrayData = data
 
       if (arrayData[0].length > 25 || arrayData.length > 50) {
