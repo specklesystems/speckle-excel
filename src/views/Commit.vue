@@ -31,7 +31,11 @@
             <i>
               Expand the data below and click the
               <v-icon x-small>mdi-download</v-icon>
-              icon to receive flattened data in the selected cell.
+              icon to receive flattened data in the selected cell (
+              <a href="https://speckle.guide/user/excel.html#receiving-data" target="_blank">
+                confused?
+              </a>
+              ).
             </i>
           </v-card-text>
         </v-card>
@@ -45,6 +49,7 @@
             :stream-id="stream.id"
             :object-id="stream.commit.referencedObject"
             :value="commitObject"
+            :downloadable="false"
             :expand="true"
           ></object-speckle-viewer>
         </v-card>

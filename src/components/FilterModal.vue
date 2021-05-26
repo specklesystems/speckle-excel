@@ -1,28 +1,34 @@
 <template>
-  <v-dialog v-model="show" width="500" persistent>
+  <v-dialog v-model="show" persistent>
     <v-card class="mx-auto">
       <v-card-title>{{ title }}</v-card-title>
       <v-card-text class="mt-5">
         <p>
-          {{ message }}, you can filter them below or
-          <a @click="model = items">select all columns.</a>
+          {{ message }}
         </p>
-        <p>This list shows the first element of each column, which most likely is a header.</p>
-        <v-autocomplete
+        <v-text-field
+          v-model="search"
+          label="Search fields"
+          flat
+          dense
+          hide-details
+          clearable
+          clear-icon="mdi-close-circle-outline"
+        ></v-text-field>
+        <v-treeview
           v-model="model"
           :items="items"
-          rounded
-          filled
+          :search="search"
+          :filter="filter"
+          :open.sync="openitems"
+          open-on-click
+          transition
+          selectable
           dense
-          flat
-          multiple
-          hide-no-data
-          hide-details
-          placeholder="Search headers"
-          clearable
-          append-icon="mdi-filter-variant"
-          class="caption"
-        ></v-autocomplete>
+          selection-type="leaf"
+          return-object
+          class="mt-5"
+        ></v-treeview>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
@@ -41,10 +47,15 @@ export default {
     dialog: false,
     title: '🙌 A lot of data is coming in!',
     message: 'You are about to receive 35 columns and 205 rows',
-    items: ['width', 'family', 'line.start', 'line.start.x', 'volume'],
-    model: null
+    items: [],
+    model: [],
+    search: '',
+    openitems: [0] //not working
   }),
   computed: {
+    filter() {
+      return (item, search, textKey) => item[textKey].indexOf(search) > -1
+    },
     show: {
       get() {
         return this.dialog
@@ -69,9 +80,11 @@ export default {
       })
     },
     agree() {
+      let items = this.model.map((x) => x.fullname)
+
       this.resolve({
         result: true,
-        items: this.model
+        items: items
       })
       this.dialog = false
     },

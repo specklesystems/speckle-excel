@@ -4,9 +4,7 @@ import store from '../store/index.js'
 
 const unflatten = require('flat').unflatten
 
-let ignoreStartsWithProps = ['__closure', 'displayMesh', '@displayMesh']
-
-let ignoreEndsWithProps = ['id', 'reference', 'totalChildrenCount']
+let ignoreEndsWithProps = ['id', 'totalChildrenCount']
 
 let streamId, sheet, rowStart, colStart, arrayData, headerIndices
 
@@ -16,7 +14,7 @@ async function flattenData(item) {
       await flattenSingle(o)
     }
   } else {
-    flattenSingle(item)
+    await flattenSingle(item)
   }
 }
 
@@ -24,7 +22,11 @@ async function flattenSingle(item) {
   if (item.speckle_type && item.speckle_type == 'reference') {
     let loader = await store.dispatch('getObject', {
       streamId: streamId,
-      objectId: item.referencedId
+      objectId: item.referencedId,
+      options: {
+        fullyTraverseArrays: false,
+        excludeProps: ['displayValue', 'displayMesh', '__closure', 'elements']
+      }
     })
 
     item = await loader.getAndConstructObject()
@@ -33,11 +35,7 @@ async function flattenSingle(item) {
   let flat = flatten(item)
   let rowData = []
   for (const [key, value] of Object.entries(flat)) {
-    if (
-      ignoreEndsWithProps.findIndex((x) => key.endsWith(x)) !== -1 ||
-      ignoreStartsWithProps.findIndex((x) => key.startsWith(x)) !== -1
-    )
-      continue
+    if (ignoreEndsWithProps.findIndex((x) => key.endsWith(x)) !== -1) continue
 
     let colIndex = arrayData[0].findIndex((x) => x === key)
     if (colIndex === -1) {
@@ -84,6 +82,28 @@ async function bakeArray(data) {
   }
 }
 
+function headerListToTree(headers) {
+  let tree = [{ id: 0, name: 'all fields', fullname: '', children: [] }]
+  let i = 1
+  for (let header of headers) {
+    var parts = header.split('.')
+    let leaf = tree[0].children
+    let partIndex = 1
+    for (let part of parts) {
+      let index = leaf.findIndex((x) => x.name === part)
+      if (index === -1) {
+        let fullname = parts.slice(0, partIndex).join('.')
+        leaf.push({ id: i, name: part, fullname: fullname, children: [] })
+        index = leaf.length - 1
+        i++
+      }
+      partIndex++
+      leaf = leaf[index].children
+    }
+  }
+  return tree
+}
+
 //recursively goes through data to check if it contains objects
 //guess it could be improved
 function hasObjects(data) {
@@ -117,13 +137,17 @@ export async function bake(data, _streamId, modal) {
 
       //if the incoming data has objects we need to flatten them to an array
       //otherwise we just output it
-      if (hasObjects(data)) await flattenData(data)
-      else arrayData = data
+      let isTabularData = true
+      if (hasObjects(data)) {
+        isTabularData = false
+        await flattenData(data)
+      } else arrayData = data
 
-      if (arrayData[0].length > 25 || arrayData.length > 50) {
+      if (!isTabularData && arrayData[0].length > 25) {
+        let headers = headerListToTree(arrayData[0])
         let dialog = await modal.open(
-          arrayData[0],
-          `You are about to receive ${arrayData[0].length} columns and ${arrayData.length} rows`
+          headers,
+          `You are about to receive ${arrayData[0].length} columns and ${arrayData.length} rows, you can filter them below.`
         )
         if (!dialog.result) {
           store.dispatch('showSnackbar', {
