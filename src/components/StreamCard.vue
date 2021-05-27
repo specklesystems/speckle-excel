@@ -234,9 +234,6 @@ export default {
       },
       skip() {
         return this.savedStream === null
-      },
-      result() {
-        console.log('completed!')
       }
     },
     $subscribe: {

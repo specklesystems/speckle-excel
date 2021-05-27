@@ -24,6 +24,7 @@
   <AppDomains>
     <AppDomain>https://speckle-excel.netlify.app</AppDomain>
     <AppDomain>https://latest.speckle.dev</AppDomain>
+    <AppDomain>https://speckle.xyz</AppDomain>
   </AppDomains>
 
   <Hosts>

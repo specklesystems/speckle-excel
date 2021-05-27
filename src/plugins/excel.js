@@ -180,8 +180,11 @@ export async function bake(data, _streamId, modal) {
 export async function send(savedStream, streamId, branchName, message) {
   try {
     await window.Excel.run(async (context) => {
-      let sheet = context.workbook.worksheets.getItem(savedStream.selection.split('!')[0])
-      let range = sheet.getRange(savedStream.selection)
+      let sheetName = savedStream.selection.split('!')[0].replace(/'/g, '')
+      let rangeAddress = savedStream.selection.split('!')[1]
+      let sheet = context.workbook.worksheets.getItem(sheetName)
+
+      let range = sheet.getRange(rangeAddress)
       range.load('values')
       await context.sync()
       let values = range.values
@@ -197,7 +200,6 @@ export async function send(savedStream, streamId, branchName, message) {
             object[propName] = propValue
           }
           let unlattened = unflatten(object)
-
           data.push(unlattened)
         }
       } else {
