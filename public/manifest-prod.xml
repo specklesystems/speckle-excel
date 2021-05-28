@@ -12,8 +12,8 @@
   <ProviderName>AEC Systems Ltd</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
 
-  <DisplayName DefaultValue="Excel Connector" />
-  <Description DefaultValue="Speckle connector for Excel"/>
+  <DisplayName DefaultValue="Speckle Connector for Excel" />
+  <Description DefaultValue="Speckle Connector for Excel"/>
 
   <!-- Icon for your add-in. Used on installation screens and the add-ins dialog. -->
   <IconUrl DefaultValue="https://speckle-excel.netlify.app/assets/icon-32.png" />
