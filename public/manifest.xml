@@ -5,15 +5,15 @@
           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
           xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
           xsi:type="TaskPaneApp">
-  <Id>884e0275-50e8-40fd-b51f-06c203c66968</Id>
+  <Id>000e0275-50e8-47fd-b51f-96c203c66000</Id>
 
   <!--Version. Updates from the store only get triggered if there is a version change. -->
   <Version>1.0.0.0</Version>
   <ProviderName>AEC Systems Ltd</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
 
-  <DisplayName DefaultValue="Excel Connector" />
-  <Description DefaultValue="Speckle connector for Excel"/>
+  <DisplayName DefaultValue="Excel Connector DEV" />
+  <Description DefaultValue="Speckle connector for Excel DEV"/>
 
   <!-- Icon for your add-in. Used on installation screens and the add-ins dialog. -->
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png" />
@@ -22,7 +22,6 @@
 <SupportUrl DefaultValue="https://speckle.guide/user/excel.html" />
 
   <AppDomains>
-    <AppDomain>https://speckle.xyz</AppDomain>
     <AppDomain>https://latest.speckle.dev</AppDomain>
     <AppDomain>https://localhost:3000</AppDomain>
   </AppDomains>
@@ -105,7 +104,7 @@
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Get started with the Speckle connector for Excel!" />
         <bt:String id="CommandsGroup.Label" DefaultValue="Speckle" />
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Excel Connector" />
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Excel Connector DEV" />
       </bt:ShortStrings>
       <!-- LongStrings max characters==250. -->
       <bt:LongStrings>
