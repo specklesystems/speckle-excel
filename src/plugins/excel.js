@@ -162,6 +162,8 @@ export async function bake(data, _streamId, modal) {
       await bakeArray(arrayData)
       await context.sync()
 
+      window._paq.push(['trackPageView', 'Excel/receive'])
+
       store.dispatch('showSnackbar', {
         message: 'Data received successfully'
       })
@@ -218,6 +220,8 @@ export async function send(savedStream, streamId, branchName, message) {
         branchName: branchName,
         message: message
       })
+
+      window._paq.push(['trackPageView', 'Excel/send'])
 
       store.dispatch('showSnackbar', {
         message: 'Data sent successfully'

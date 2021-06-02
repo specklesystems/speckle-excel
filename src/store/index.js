@@ -222,6 +222,8 @@ export default new Vuex.Store({
       try {
         let query = `query {
       user {
+        id
+        suuid
         name
         avatar
       },
@@ -243,8 +245,15 @@ export default new Vuex.Store({
           })
         })
         let data = (await response.json()).data
-        context.commit('SET_USER', data.user)
-        context.commit('SET_SERVER', data.serverInfo)
+        if (data.user) {
+          localStorage.setItem('suuid', data.user.suuid)
+          localStorage.setItem('uuid', data.user.id)
+          context.commit('SET_USER', data.user)
+          context.commit('SET_SERVER', data.serverInfo)
+        } else {
+          context.dispatch('logout')
+          throw new Error('Failed to set user')
+        }
       } catch (error) {
         console.log(error)
         context.dispatch('logout')

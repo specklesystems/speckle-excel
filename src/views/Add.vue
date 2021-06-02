@@ -105,6 +105,9 @@ export default {
       )
     }
   },
+  mounted() {
+    this.$matomo && this.$matomo.trackPageView(`Excel/stream/list`)
+  },
   methods: {
     infiniteHandler($state) {
       this.$apollo.queries.streams.fetchMore({
