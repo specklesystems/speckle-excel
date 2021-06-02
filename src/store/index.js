@@ -145,6 +145,8 @@ export default new Vuex.Store({
       // Wipe the tokens
       localStorage.removeItem(TOKEN)
       localStorage.removeItem(REFRESH_TOKEN)
+      localStorage.removeItem('suuid')
+      localStorage.removeItem('uuid')
     },
     async exchangeAccessCode(_, accessCode) {
       try {
