@@ -7,7 +7,7 @@ export default {
       state.streams.unshift(value)
     },
     REMOVE_STREAM(state, value) {
-      const index = state.streams.findIndex((x) => x.id === value.id)
+      const index = state.streams.findIndex((x) => x.id === value)
       if (index > -1) {
         state.streams.splice(index, 1)
       }
@@ -27,8 +27,8 @@ export default {
     updateStream({ commit }, stream) {
       commit('UPDATE_STREAM', stream)
     },
-    removeStream({ commit }, stream) {
-      commit('REMOVE_STREAM', stream)
+    removeStream({ commit }, streamId) {
+      commit('REMOVE_STREAM', streamId)
     }
   }
 }

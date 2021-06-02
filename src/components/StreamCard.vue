@@ -1,9 +1,40 @@
 <template>
   <div>
-    <div v-if="$apollo.loading" class="mx-0 mb-3">
+    <v-card v-if="error" class="pa-5 mb-3" style="transition: all 0.2s">
+      <v-card-title class="subtitle-1 px-0 pt-0">
+        Something went wrong ⚠️
+        <div class="floating">
+          <v-btn
+            v-tooltip="`Remove this stream from the document`"
+            small
+            icon
+            color="red"
+            @click="remove"
+          >
+            <v-icon small>mdi-minus-circle-outline</v-icon>
+          </v-btn>
+          <v-btn
+            v-tooltip="`Open this stream in a new window`"
+            small
+            icon
+            color="primary"
+            :href="`${serverUrl}/streams/${savedStream.id}`"
+            target="_blank"
+          >
+            <v-icon small>mdi-open-in-new</v-icon>
+          </v-btn>
+        </div>
+      </v-card-title>
+      <v-card-text class="px-0">
+        {{ error }}
+        <br />
+        Stream Id: {{ savedStream.id }}
+      </v-card-text>
+    </v-card>
+    <div v-else-if="$apollo.queries.stream.loading" class="mx-0 mb-3">
       <v-skeleton-loader type="article"></v-skeleton-loader>
     </div>
-    <v-card v-else class="pa-5 mb-3" style="transition: all 0.2s">
+    <v-card v-else-if="stream" class="pa-5 mb-3" style="transition: all 0.2s">
       <v-row>
         <v-col class="align-self-center">
           <div class="subtitle-1">
@@ -219,6 +250,7 @@ export default {
   },
   data() {
     return {
+      error: null,
       message: ''
     }
   },
@@ -231,6 +263,13 @@ export default {
         return {
           id: this.savedStream.id
         }
+      },
+      error(error) {
+        console.log(this.error)
+        this.error = JSON.stringify(error.message)
+          .replaceAll('"', '')
+          .replace('GraphQL error: ', '')
+        console.log(this.error)
       },
       skip() {
         return this.savedStream === null
@@ -345,7 +384,7 @@ export default {
     },
 
     remove() {
-      return this.$store.dispatch('removeStream', this.stream)
+      return this.$store.dispatch('removeStream', this.savedStream.id)
     },
     async send() {
       send(this.savedStream, this.stream.id, this.selectedBranch.name, this.message)
