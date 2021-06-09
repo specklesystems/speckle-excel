@@ -33,6 +33,16 @@
             <v-list-item-title>{{ item.name }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+
+        <v-list-item :href="serverUrl" target="_blank">
+          <v-list-item-icon>
+            <v-icon>mdi-open-in-new</v-icon>
+          </v-list-item-icon>
+
+          <v-list-item-content>
+            <v-list-item-title>Speckle</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
     <v-app-bar app color="primary" dark>
@@ -86,6 +96,9 @@ export default {
     isAuthenticated() {
       if (!this.$store.state) return false
       return this.$store.getters.isAuthenticated
+    },
+    serverUrl() {
+      return this.$store.getters.serverUrl
     },
     user() {
       if (!this.$store.state) return null
