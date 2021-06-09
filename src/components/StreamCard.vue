@@ -68,6 +68,7 @@
             </v-btn>
 
             <v-btn
+              v-if="stream.role != 'stream:reviewer'"
               v-tooltip="`Click to make this a ` + (savedStream.isReceiver ? `sender` : `receiver`)"
               small
               icon

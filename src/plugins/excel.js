@@ -141,13 +141,10 @@ export async function bake(data, _streamId, modal) {
       if (hasObjects(data)) {
         isTabularData = false
         await flattenData(data)
-        //transpose 2d array
-        console.log(arrayData)
+        //transpose 2d array, sort alphabetically, then transpose again
+        //this helps ensure teh order of the baked columns is the same across streams
         arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
-        console.log(arrayData)
-        //sort alphabetically
         arrayData = arrayData.sort((a, b) => a[0] - b[0])
-        //transpose 2d array
         arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
       } else arrayData = data
 
