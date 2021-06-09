@@ -2,7 +2,7 @@
   <div>
     <v-card v-if="error" class="pa-5 mb-3" style="transition: all 0.2s">
       <v-card-title class="subtitle-1 px-0 pt-0">
-        Something went wrong ⚠️
+        {{ error }} ⚠️
         <div class="floating">
           <v-btn
             v-tooltip="`Remove this stream from the document`"
@@ -26,7 +26,12 @@
         </div>
       </v-card-title>
       <v-card-text class="px-0">
-        {{ error }}
+        <span v-if="error == 'Stream not found'">
+          The stream might have been deleted or belog to another Speckle server
+        </span>
+        <span v-if="error == 'You do not have access to this resource.'">
+          Please ask the stream owner for access or to make it public
+        </span>
         <br />
         Stream Id: {{ savedStream.id }}
       </v-card-text>
