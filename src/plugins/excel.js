@@ -162,7 +162,8 @@ export async function bake(data, _streamId, modal) {
       await bakeArray(arrayData)
       await context.sync()
 
-      window._paq.push(['trackPageView', 'Excel/receive'])
+      window._paq.push(['setCustomUrl', 'http://connectors/Excel/receive'])
+      window._paq.push(['trackPageView', 'receive'])
 
       store.dispatch('showSnackbar', {
         message: 'Data received successfully'
@@ -221,7 +222,8 @@ export async function send(savedStream, streamId, branchName, message) {
         message: message
       })
 
-      window._paq.push(['trackPageView', 'Excel/send'])
+      window._paq.push(['setCustomUrl', 'http://connectors/Excel/send'])
+      window._paq.push(['trackPageView', 'send'])
 
       store.dispatch('showSnackbar', {
         message: 'Data sent successfully'
