@@ -106,7 +106,7 @@ export default {
     }
   },
   mounted() {
-    this.$matomo && this.$matomo.setUrl(`http://connectors/Excel/stream/list`)
+    this.$matomo && this.$matomo.setCustomUrl(`http://connectors/Excel/stream/list`)
     this.$matomo && this.$matomo.trackPageView(`stream/list`)
   },
   methods: {

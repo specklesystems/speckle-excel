@@ -141,6 +141,14 @@ export async function bake(data, _streamId, modal) {
       if (hasObjects(data)) {
         isTabularData = false
         await flattenData(data)
+        //transpose 2d array
+        console.log(arrayData)
+        arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
+        console.log(arrayData)
+        //sort alphabetically
+        arrayData = arrayData.sort((a, b) => a[0] - b[0])
+        //transpose 2d array
+        arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
       } else arrayData = data
 
       if (!isTabularData && arrayData[0].length > 25) {
