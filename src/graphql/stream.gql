@@ -2,7 +2,7 @@ query Stream($id: String!) {
   stream(id: $id) {
     id
     name
-
+    role
     branches {
       totalCount
       items {

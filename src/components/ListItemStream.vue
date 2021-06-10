@@ -109,7 +109,8 @@ export default {
   },
   methods: {
     addStream() {
-      this.$matomo && this.$matomo.trackPageView(`Excel/stream/add`)
+      this.$matomo && this.$matomo.setCustomUrl(`http://connectors/Excel/stream/add`)
+      this.$matomo && this.$matomo.trackPageView(`stream/add`)
 
       this.$store.dispatch('addStream', {
         id: this.stream.id,

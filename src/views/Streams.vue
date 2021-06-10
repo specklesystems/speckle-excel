@@ -18,7 +18,7 @@
       <v-col cols="12">
         <v-card elevation="0" color="transparent">
           <v-card-text class="mt-0 pt-3">
-            <div v-for="(stream, i) in streams" :key="i">
+            <div v-for="stream in streams" :key="stream.id">
               <stream-card :saved-stream="stream"></stream-card>
             </div>
           </v-card-text>

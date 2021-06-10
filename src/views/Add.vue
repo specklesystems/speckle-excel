@@ -5,29 +5,45 @@
         <p v-if="filteredStreams && filteredStreams.length > 0" class="subtitle">
           Click on a stream to add it to this document. 👇
         </p>
-        <div v-else>
-          <p class="subtitle">You don't have any streams 😟, don't worry!</p>
-          <v-btn large class="mt-5" color="primary" :href="serverUrl" target="_blank">
-            Create a new stream
-          </v-btn>
+        <p v-else-if="search" class="subtitle">No streams found 🧐</p>
+        <div v-else-if="!$apollo.loading">
+          <p class="subtitle">
+            You don't have any streams 😟,
+            <a :href="serverUrl" target="_blank">visit Speckle web to create one</a>
+            !
+          </p>
         </div>
       </v-col>
     </v-row>
 
-    <v-row>
-      <v-col cols="12">
+    <v-row align="center" class="my-0 py-0">
+      <v-col cols="12" class="my-0 py-0" align="center">
+        <v-text-field
+          v-model="search"
+          rounded
+          filled
+          clearable
+          label="Search"
+          class="mx-5 search"
+          prepend-inner-icon="mdi-magnify"
+        ></v-text-field>
+      </v-col>
+    </v-row>
+
+    <v-row class="mt-0 pt-0">
+      <v-col cols="12" class="mt-0 pt-0">
         <v-card elevation="0" color="transparent">
           <div v-if="$apollo.loading" class="mx-4">
             <v-skeleton-loader class="mt-3" type="article"></v-skeleton-loader>
             <v-skeleton-loader class="mt-3" type="article"></v-skeleton-loader>
             <v-skeleton-loader class="mt-3" type="article"></v-skeleton-loader>
           </div>
-          <v-card-text v-else class="mt-0 pt-3">
+          <v-card-text v-if="streams" class="mt-0 pt-3">
             <div v-for="(stream, i) in filteredStreams" :key="i">
               <list-item-stream :stream="stream"></list-item-stream>
             </div>
             <infinite-loading
-              v-if="streams.items.length < streams.totalCount"
+              v-if="streams && streams.items && streams.items.length < streams.totalCount"
               @infinite="infiniteHandler"
             >
               <div slot="no-more">These are all your streams!</div>
@@ -54,13 +70,23 @@ export default {
     InfiniteLoading
   },
   data: () => ({
-    streams: []
+    streams: [],
+    search: ''
   }),
   apollo: {
     streams: {
       prefetch: true,
       query: streamsQuery,
-      fetchPolicy: 'cache-and-network' //https://www.apollographql.com/docs/react/data/queries/
+      fetchPolicy: 'cache-and-network', //https://www.apollographql.com/docs/react/data/queries/
+      variables() {
+        return {
+          query: this.search
+        }
+      },
+      skip() {
+        return this.search && this.search.length > 0 && this.search.length < 3
+      },
+      debounce: 300
     },
     $subscribe: {
       userStreamAdded: {
@@ -106,7 +132,8 @@ export default {
     }
   },
   mounted() {
-    this.$matomo && this.$matomo.trackPageView(`Excel/stream/list`)
+    this.$matomo && this.$matomo.setCustomUrl(`http://connectors/Excel/stream/list`)
+    this.$matomo && this.$matomo.trackPageView(`stream/list`)
   },
   methods: {
     infiniteHandler($state) {
@@ -137,3 +164,8 @@ export default {
   }
 }
 </script>
+<style>
+.search .v-text-field__details {
+  display: none !important;
+}
+</style>
