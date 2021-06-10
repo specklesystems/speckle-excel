@@ -20,6 +20,10 @@ export default {
     keyName: {
       type: String,
       default: null
+    },
+    fullKeyName: {
+      type: String,
+      default: null
     }
   }
 }

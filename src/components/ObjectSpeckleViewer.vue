@@ -34,7 +34,8 @@
         :is="entry.type"
         v-for="(entry, index) in objectEntries"
         :key="index"
-        :key-name="entry.key"
+        :key-name="entry.name"
+        :full-key-name="fullKeyName ? `${fullKeyName}.${entry.key}` : entry.key"
         :value="entry.value"
         :stream-id="streamId"
       ></component>
@@ -64,6 +65,10 @@ export default {
       default: null
     },
     keyName: {
+      type: String,
+      default: null
+    },
+    fullKeyName: {
       type: String,
       default: null
     },
@@ -106,14 +111,16 @@ export default {
       let entries = Object.entries(this.object.data)
       let arr = []
       for (let [key, val] of entries) {
+        let name = key
         if (key.startsWith('__')) continue
-        if (key[0] === '@') key = key.substring(1)
-        if (key === 'totalChildrenCount') key = 'total children count'
-        if (key === 'speckle_type') key = 'speckle type'
+        if (key[0] === '@') name = key.substring(1)
+        if (key === 'totalChildrenCount') name = 'total children count'
+        if (key === 'speckle_type') name = 'speckle type'
 
         if (Array.isArray(val)) {
           arr.push({
             key,
+            name,
             value: val,
             type: 'ObjectListViewer',
             description: `List (${val.length} elements)`
@@ -122,12 +129,14 @@ export default {
           if (val.speckle_type && val.speckle_type === 'reference') {
             arr.push({
               key,
+              name,
               value: val,
               type: 'ObjectSpeckleViewer'
             })
           } else {
             arr.push({
               key,
+              name,
               value: val,
               type: 'ObjectSimpleViewer'
             })
@@ -135,6 +144,7 @@ export default {
         } else {
           arr.push({
             key,
+            name,
             value: val,
             type: 'ObjectValueViewer'
           })
@@ -157,9 +167,19 @@ export default {
     },
     async bake() {
       this.progress = true
+      let receiverSelection
+      if (this.object)
+        receiverSelection = await bake(this.object.data, this.streamId, this.$refs.modal)
+      else receiverSelection = await bake(this.value, this.streamId, this.$refs.modal)
 
-      if (this.object) await bake(this.object.data, this.streamId, this.$refs.modal)
-      else await bake(this.value, this.streamId, this.$refs.modal)
+      if (receiverSelection) {
+        receiverSelection.fullKeyName = this.fullKeyName
+
+        this.$store.dispatch('setReceiverSelection', {
+          id: this.streamId,
+          receiverSelection: receiverSelection
+        })
+      }
 
       this.progress = false
     }

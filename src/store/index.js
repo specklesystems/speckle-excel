@@ -58,13 +58,16 @@ const vuexExcel = new VuexPersistence({
     await window.Excel.run(async (context) => {
       let xmlParts = context.workbook.customXmlParts
       let parts = context.workbook.customXmlParts.getByNamespace(XML_NS)
-
       parts.load('items')
       await context.sync()
 
       for (let part of parts.items) {
-        part.delete()
-        await context.sync()
+        try {
+          part.delete()
+          await context.sync()
+        } catch {
+          //ignore
+        }
       }
 
       let builder = new xml2js.Builder()
@@ -81,10 +84,18 @@ const vuexExcel = new VuexPersistence({
 
       let xml = builder.buildObject(obj)
       xmlParts.add(xml)
+
       await context.sync()
     })
   },
   modules: ['streams'],
+  filter: (
+    mutation //somehow, the saveState was also triggered by dispatching to the snackbar, so I have to manually select the mutations
+  ) =>
+    mutation.type == 'ADD_STREAM' ||
+    mutation.type == 'REMOVE_STREAM' ||
+    mutation.type == 'UPDATE_STREAM' ||
+    mutation.type == 'SET_RECEIVER_SELECTION',
   asyncStorage: true
 })
 
