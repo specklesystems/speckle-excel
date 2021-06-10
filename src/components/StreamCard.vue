@@ -199,22 +199,48 @@
       </v-row>
       <v-row v-if="savedStream.isReceiver">
         <v-col class="align-self-center">
-          <v-btn
-            v-if="selectedCommit"
-            color="primary"
-            class="lower"
-            small
-            :to="`/streams/${stream.id}/commits/${selectedCommit.id}`"
-          >
-            <v-img class="mr-2" width="30" height="30" src="../assets/ReceiverWhite@32.png" />
+          <v-dialog v-model="progress" persistent>
+            <v-card class="pt-3">
+              <v-card-text class="caption">
+                Receiving data from the Speckleverse...
+                <v-progress-linear class="mt-2" indeterminate color="primary"></v-progress-linear>
+              </v-card-text>
+            </v-card>
+          </v-dialog>
+          <v-menu open-on-hover top offset-y>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                :disabled="!selectedCommit"
+                color="primary"
+                class="lower"
+                v-bind="attrs"
+                small
+                v-on="on"
+              >
+                <v-img class="mr-2" width="30" height="30" src="../assets/ReceiverWhite@32.png" />
 
-            Receive
-          </v-btn>
-          <!-- hack to show the button disdabled without vue complaining of invalid selectedCommit.id -->
-          <v-btn v-else color="primary" small disabled>
-            <v-img class="mr-2" width="30" height="30" src="../assets/ReceiverWhite@32.png" />
-            Receive
-          </v-btn>
+                Receive
+              </v-btn>
+            </template>
+
+            <v-list v-if="selectedCommit" dense>
+              <v-list-item :to="`/streams/${stream.id}/commits/${selectedCommit.id}`">
+                <v-list-item-action class="mr-2">
+                  <v-icon small>mdi-filter-variant</v-icon>
+                </v-list-item-action>
+                <v-list-item-content class="caption">Filter and receive</v-list-item-content>
+              </v-list-item>
+              <v-list-item :disabled="!savedStream.receiverSelection" @click="receiveLatest">
+                <v-list-item-action class="mr-2">
+                  <v-icon small>mdi-update</v-icon>
+                </v-list-item-action>
+                <v-list-item-content class="caption">Receive last selection</v-list-item-content>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+          <!-- <span v-if="savedStream.receiverSelection">
+            {{ savedStream.receiverSelection.fullKeyName }}
+          </span> -->
         </v-col>
       </v-row>
 
@@ -244,7 +270,7 @@
 </template>
 <script>
 import streamQuery from '../graphql/stream.gql'
-import { send } from '../plugins/excel'
+import { send, receiveLatest } from '../plugins/excel'
 import gql from 'graphql-tag'
 
 export default {
@@ -257,6 +283,7 @@ export default {
   data() {
     return {
       error: null,
+      progress: false,
       message: ''
     }
   },
@@ -394,6 +421,15 @@ export default {
     },
     async send() {
       send(this.savedStream, this.stream.id, this.selectedBranch.name, this.message)
+    },
+    async receiveLatest() {
+      this.progress = true
+      await receiveLatest(
+        this.selectedCommit.referencedObject,
+        this.stream.id,
+        this.savedStream.receiverSelection
+      )
+      this.progress = false
     },
     formatCommitName(id) {
       if (this.selectedBranch.commits.items[0].id == id) return 'latest'

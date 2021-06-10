@@ -17,6 +17,14 @@ export default {
       if (index > -1) {
         state.streams.splice(index, 1, value)
       }
+    },
+    SET_RECEIVER_SELECTION(state, value) {
+      const index = state.streams.findIndex((x) => x.id === value.id)
+      if (index > -1) {
+        let stream = state.streams[index]
+        stream.receiverSelection = value.receiverSelection
+        //state.streams.splice(index, 1, stream)
+      }
     }
   },
   getters: {},
@@ -29,6 +37,9 @@ export default {
     },
     removeStream({ commit }, streamId) {
       commit('REMOVE_STREAM', streamId)
+    },
+    setReceiverSelection({ commit }, data) {
+      commit('SET_RECEIVER_SELECTION', data)
     }
   }
 }

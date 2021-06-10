@@ -13,6 +13,7 @@ query Stream($id: String!) {
           items {
             id
             message
+            referencedObject
           }
         }
       }

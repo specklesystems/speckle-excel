@@ -27,6 +27,7 @@
         v-for="(entry, index) in rangeEntries"
         :key="index"
         :key-name="entry.key"
+        :full-key-name="fullKeyName ? `${fullKeyName}.${entry.key}` : entry.key"
         :value="entry.value"
         :stream-id="streamId"
       ></component>
@@ -53,6 +54,10 @@ export default {
       default: () => []
     },
     keyName: {
+      type: String,
+      default: null
+    },
+    fullKeyName: {
       type: String,
       default: null
     },
@@ -124,7 +129,17 @@ export default {
     },
     async bake() {
       this.progress = true
-      await bake(this.value, this.streamId, this.$refs.modal)
+
+      let receiverSelection = await bake(this.value, this.streamId, this.$refs.modal)
+      if (receiverSelection) {
+        receiverSelection.fullKeyName = this.fullKeyName
+
+        this.$store.dispatch('setReceiverSelection', {
+          id: this.streamId,
+          receiverSelection: receiverSelection
+        })
+      }
+
       this.progress = false
     }
   }
