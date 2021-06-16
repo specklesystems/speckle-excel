@@ -12,7 +12,6 @@ const xml2js = require('xml2js')
 Vue.use(Vuex)
 
 const APP_NAME = process.env.VUE_APP_SPECKLE_NAME
-// const SERVER_URL = process.env.VUE_APP_SERVER_URL
 const TOKEN = `${APP_NAME}.AuthToken`
 const REFRESH_TOKEN = `${APP_NAME}.RefreshToken`
 const CHALLENGE = `${APP_NAME}.Challenge`
@@ -159,6 +158,7 @@ export default new Vuex.Store({
       context.commit('SET_SERVER', null)
       // Wipe the tokens
       localStorage.removeItem(TOKEN)
+      localStorage.removeItem('serverUrl')
       localStorage.removeItem(REFRESH_TOKEN)
       localStorage.removeItem('suuid')
       localStorage.removeItem('uuid')

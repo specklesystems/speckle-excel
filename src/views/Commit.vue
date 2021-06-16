@@ -60,6 +60,7 @@
 <script>
 import ObjectSpeckleViewer from '../components/ObjectSpeckleViewer'
 import commitQuery from '../graphql/commit.gql'
+import { createClient } from '../vue-apollo'
 
 export default {
   name: 'Commit',
@@ -67,6 +68,7 @@ export default {
     ObjectSpeckleViewer
   },
   apollo: {
+    $client: createClient(),
     stream: {
       prefetch: true,
       query: commitQuery,

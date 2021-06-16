@@ -46,6 +46,7 @@
 <script>
 import objectQuery from '../graphql/object.gql'
 import { bake } from '../plugins/excel'
+import { createClient } from '../vue-apollo'
 
 export default {
   name: 'ObjectSpeckleViewer',
@@ -88,6 +89,7 @@ export default {
     }
   },
   apollo: {
+    $client: createClient(),
     object: {
       query: objectQuery,
       variables() {

@@ -19,7 +19,7 @@
         </span>
         <span class="subtitle">👇</span>
         <br />
-        <v-form ref="form" v-model="validForm" lazy-validation @submit="login">
+        <v-form ref="form" v-model="validForm" lazy-validation @submit.prevent="login">
           <v-text-field
             v-model="serverUrl"
             :error-messages="serverError"
@@ -29,7 +29,7 @@
             required
             :rules="serverUrlRules"
           ></v-text-field>
-          <v-btn large class="mt-5" color="primary" @click="login">Login</v-btn>
+          <v-btn large class="mt-5" color="primary" type="submit">Login</v-btn>
         </v-form>
         <span class="caption">
           <br />
@@ -42,7 +42,8 @@
 export default {
   name: 'Login',
   data: () => ({
-    serverUrl: 'https://speckle.xyz',
+    serverUrl:
+      process.env.NODE_ENV === 'development' ? 'https://latest.speckle.dev' : 'https://speckle.xyz',
     validForm: true,
     serverError: '',
     serverUrlRules: [
@@ -52,6 +53,7 @@ export default {
         'URL must be valid, with no trailing slash'
     ]
   }),
+  mounted() {},
 
   methods: {
     async login() {
