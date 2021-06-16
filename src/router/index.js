@@ -49,10 +49,7 @@ router.beforeEach(async (to, from, next) => {
     window.Office.context.ui.messageParent(to.query.access_code)
     return
   } else if (to.name === 'redirect') {
-    await store.dispatch('redirect', {
-      challenge: to.query.challenge,
-      serverUrl: to.query.serverUrl
-    })
+    await store.dispatch('redirect', to.query.challenge)
     return
   }
 
