@@ -272,6 +272,7 @@
 import streamQuery from '../graphql/stream.gql'
 import { send, receiveLatest } from '../plugins/excel'
 import gql from 'graphql-tag'
+import { createClient } from '../vue-apollo'
 
 export default {
   props: {
@@ -308,6 +309,7 @@ export default {
         return this.savedStream === null
       }
     },
+    $client: createClient(),
     $subscribe: {
       streamUpdated: {
         query: gql`

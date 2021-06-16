@@ -61,6 +61,7 @@ import ListItemStream from '../components/ListItemStream'
 import gql from 'graphql-tag'
 import streamsQuery from '../graphql/streams.gql'
 import InfiniteLoading from 'vue-infinite-loading'
+import { createClient } from '../vue-apollo'
 
 export default {
   name: 'Add',
@@ -74,6 +75,7 @@ export default {
     search: ''
   }),
   apollo: {
+    $client: createClient(),
     streams: {
       prefetch: true,
       query: streamsQuery,

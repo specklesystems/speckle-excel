@@ -33,6 +33,7 @@
 </template>
 <script>
 import userQuery from '../graphql/userById.gql'
+import { createClient } from '../vue-apollo'
 
 export default {
   props: {
@@ -56,6 +57,7 @@ export default {
     }
   },
   apollo: {
+    $client: createClient(),
     user: {
       query: userQuery,
       variables() {

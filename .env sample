@@ -1,5 +1,4 @@
 VUE_APP_SPECKLE_ID=
 VUE_APP_SPECKLE_SECRET=
-VUE_APP_SERVER_URL=https://latest.speckle.dev
 VUE_APP_SPECKLE_NAME=ExcelConnector
 BASE_URL=https://localhost:3000

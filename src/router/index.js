@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import store from '../store/index.js'
+//import { apolloProvider, createClient } from '../vue-apollo'
 
 Vue.use(VueRouter)
 
@@ -61,6 +62,8 @@ router.beforeEach(async (to, from, next) => {
   } else if (to.name === 'logout') {
     await store.dispatch('logout')
     next('/login')
-  } else next()
+  } else {
+    next()
+  }
 })
 export default router

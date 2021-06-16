@@ -43,7 +43,6 @@ export default {
       return this.$store.state.streams.streams
     }
   },
-  mounted() {},
   methods: {}
 }
 </script>
