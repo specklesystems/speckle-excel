@@ -162,6 +162,8 @@ export default new Vuex.Store({
       localStorage.removeItem(REFRESH_TOKEN)
       localStorage.removeItem('suuid')
       localStorage.removeItem('uuid')
+
+      window.location = window.location.origin
     },
     async exchangeAccessCode(_, accessCode) {
       try {
