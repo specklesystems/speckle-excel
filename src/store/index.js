@@ -12,7 +12,7 @@ const xml2js = require('xml2js')
 Vue.use(Vuex)
 
 const APP_NAME = process.env.VUE_APP_SPECKLE_NAME
-// const SERVER_URL = process.env.VUE_APP_SERVER_URL
+const SERVER_URL = process.env.VUE_APP_SERVER_URL
 const TOKEN = `${APP_NAME}.AuthToken`
 const REFRESH_TOKEN = `${APP_NAME}.RefreshToken`
 const CHALLENGE = `${APP_NAME}.Challenge`
@@ -105,7 +105,7 @@ export default new Vuex.Store({
   },
   plugins: [vuexLocal.plugin, vuexExcel.plugin],
   getters: {
-    serverUrl: () => localStorage.getItem('serverUrl')
+    serverUrl: () => SERVER_URL
   },
   mutations: {
     SET_SNACKBAR(state, value) {
@@ -113,23 +113,19 @@ export default new Vuex.Store({
     }
   },
   actions: {
-    async redirect(_, data) {
+    async redirect(_, challenge) {
       //go to login and refresh token
-      window.location = `${data.serverUrl}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${data.challenge}`
+      window.location = `${SERVER_URL}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${challenge}`
     },
-    async login({ dispatch }, serverUrl) {
+    async login({ dispatch }) {
       // Generate random challenge
       var challenge =
         Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
       // Save challenge in localStorage
       localStorage.setItem(CHALLENGE, challenge)
-      localStorage.setItem('serverUrl', serverUrl)
-
       // Send user to auth page
       await window.Office.context.ui.displayDialogAsync(
-        `${window.location.origin}/redirect?challenge=${challenge}&serverUrl=${encodeURIComponent(
-          serverUrl
-        )}`,
+        `${window.location.origin}/redirect?challenge=${challenge}`,
         {
           height: 80,
           width: 30,
@@ -165,8 +161,7 @@ export default new Vuex.Store({
     },
     async exchangeAccessCode(_, accessCode) {
       try {
-        let serverUrl = localStorage.getItem('serverUrl')
-        let response = await fetch(`${serverUrl}/auth/token/`, {
+        let response = await fetch(`${SERVER_URL}/auth/token/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -193,11 +188,9 @@ export default new Vuex.Store({
     },
     async createCommit(context, { streamId, branchName, message, object }) {
       let query = `mutation objectCreate ($object: ObjectCreateInput!) {objectCreate(objectInput: $object)}`
-
-      let serverUrl = localStorage.getItem('serverUrl')
       let token = localStorage.getItem(TOKEN)
 
-      let response = await fetch(`${serverUrl}/graphql`, {
+      let response = await fetch(`${SERVER_URL}/graphql`, {
         method: 'POST',
         headers: {
           Authorization: 'Bearer ' + token,
@@ -218,7 +211,7 @@ export default new Vuex.Store({
 
       query = `mutation commitCreate($myCommit: CommitCreateInput!){ commitCreate(commit: $myCommit)}`
 
-      response = await fetch(`${serverUrl}/graphql`, {
+      response = await fetch(`${SERVER_URL}/graphql`, {
         method: 'POST',
         headers: {
           Authorization: 'Bearer ' + token,
@@ -253,9 +246,8 @@ export default new Vuex.Store({
       }
     }`
         let token = localStorage.getItem(TOKEN)
-        let serverUrl = localStorage.getItem('serverUrl')
 
-        let response = await fetch(`${serverUrl}/graphql`, {
+        let response = await fetch(`${SERVER_URL}/graphql`, {
           method: 'POST',
           headers: {
             Authorization: 'Bearer ' + token,
@@ -282,7 +274,7 @@ export default new Vuex.Store({
     },
     async getObject(context, { streamId, objectId, options }) {
       return new ObjectLoader({
-        serverUrl: localStorage.getItem('serverUrl'),
+        serverUrl: process.env.VUE_APP_SERVER_URL,
         token: localStorage.getItem(TOKEN),
         streamId: streamId,
         objectId: objectId,

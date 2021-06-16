@@ -298,9 +298,11 @@ export default {
         }
       },
       error(error) {
+        console.log(this.error)
         this.error = JSON.stringify(error.message)
           .replaceAll('"', '')
           .replace('GraphQL error: ', '')
+        console.log(this.error)
       },
       skip() {
         return this.savedStream === null

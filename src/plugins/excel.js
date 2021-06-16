@@ -53,7 +53,7 @@ async function flattenSingle(item) {
 }
 
 //called if the received data does not contain objects => it's a table, a list or a single value
-async function bakeArray(data, context) {
+async function bakeArray(data) {
   //it's a single value
   if (!Array.isArray(data)) {
     let valueRange = sheet.getCell(rowStart, colStart)
@@ -70,7 +70,6 @@ async function bakeArray(data, context) {
   }
   //it's a list of lists aka table
   else {
-    let counter = 0
     let rowIndex = 0
     for (let array of data) {
       let colIndex = 0
@@ -80,16 +79,9 @@ async function bakeArray(data, context) {
           let valueRange = sheet.getCell(rowIndex + rowStart, actualColIndex + colStart)
           valueRange.values = Array.isArray(item) ? JSON.stringify(item) : item
           actualColIndex++
-          counter++
         }
         colIndex++
-        //sync in batches to avoid a RequestPayloadSizeLimitExceeded
-        if (counter > 5000) {
-          counter = 0
-          await context.sync()
-        }
       }
-
       rowIndex++
     }
   }
@@ -219,7 +211,7 @@ export async function bake(data, _streamId, modal, previousHeaders, previousRang
         }
       }
 
-      await bakeArray(arrayData, context)
+      await bakeArray(arrayData)
       await context.sync()
     })
     window._paq.push(['setCustomUrl', 'http://connectors/Excel/receive'])
