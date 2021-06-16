@@ -19,8 +19,18 @@
         </span>
         <span class="subtitle">👇</span>
         <br />
-
-        <v-btn large class="mt-5" color="primary" @click="login">Login</v-btn>
+        <v-form ref="form" v-model="validForm" lazy-validation @submit="login">
+          <v-text-field
+            v-model="serverUrl"
+            :error-messages="serverError"
+            class="mt-5 mb-5"
+            label="Speckle Server Address"
+            :autofocus="true"
+            required
+            :rules="serverUrlRules"
+          ></v-text-field>
+          <v-btn large class="mt-5" color="primary" @click="login">Login</v-btn>
+        </v-form>
         <span class="caption">
           <br />
         </span>
@@ -31,10 +41,24 @@
 <script>
 export default {
   name: 'Login',
+  data: () => ({
+    serverUrl: 'https://speckle.xyz',
+    validForm: true,
+    serverError: '',
+    serverUrlRules: [
+      (v) => !!v || 'Server URL is required',
+      (v) =>
+        new RegExp(/^https?:\/\/([\w-.]{2,})(\.([a-zA-Z]{2,})|(:\d{4}))$/g).test(v) ||
+        'URL must be valid, with no trailing slash'
+    ]
+  }),
 
   methods: {
-    login() {
-      this.$store.dispatch('login')
+    async login() {
+      //when for is not visible (coming from web) don't validate
+      if (this.$refs.form && !this.$refs.form.validate()) return
+
+      this.$store.dispatch('login', this.serverUrl)
     }
   }
 }
