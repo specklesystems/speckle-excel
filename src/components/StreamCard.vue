@@ -207,7 +207,7 @@
               </v-card-text>
             </v-card>
           </v-dialog>
-          <v-menu open-on-hover top offset-y>
+          <v-menu top offset-y>
             <template #activator="{ on, attrs }">
               <v-btn
                 :disabled="!selectedCommit"
