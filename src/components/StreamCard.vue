@@ -318,9 +318,7 @@ export default {
           }
         `,
         variables() {
-          return {
-            id: this.savedStream.id
-          }
+          return { id: this.savedStream.id }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -333,9 +331,7 @@ export default {
           }
         `,
         variables() {
-          return {
-            streamId: this.savedStream.id
-          }
+          return { streamId: this.savedStream.id }
         },
         result(commitInfo) {
           this.$apollo.queries.stream.refetch()
@@ -343,6 +339,58 @@ export default {
             this.$store.dispatch('showSnackbar', {
               message: `New commit on ${this.stream.name} @ ${commitInfo.data.commitCreated.branchName}`
             })
+        }
+      },
+      commitUpdated: {
+        query: gql`
+          subscription($id: String!) {
+            commitUpdated(streamId: $id)
+          }
+        `,
+        variables() {
+          return { id: this.savedStream.id }
+        },
+        result() {
+          this.$apollo.queries.stream.refetch()
+        }
+      },
+      branchCreated: {
+        query: gql`
+          subscription($id: String!) {
+            branchCreated(streamId: $id)
+          }
+        `,
+        variables() {
+          return { id: this.savedStream.id }
+        },
+        result() {
+          this.$apollo.queries.stream.refetch()
+        }
+      },
+      branchDeleted: {
+        query: gql`
+          subscription($id: String!) {
+            branchDeleted(streamId: $id)
+          }
+        `,
+        variables() {
+          return { id: this.savedStream.id }
+        },
+        result() {
+          this.$apollo.queries.stream.refetch()
+        }
+      },
+      branchUpdated: {
+        query: gql`
+          subscription($id: String!) {
+            branchUpdated(streamId: $id)
+          }
+        `,
+        variables() {
+          return { id: this.savedStream.id }
+        },
+        result() {
+          this.$apollo.queries.stream.refetch()
         }
       }
     }
