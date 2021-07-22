@@ -54,7 +54,8 @@ export default {
   }),
   computed: {
     filter() {
-      return (item, search, textKey) => item[textKey].indexOf(search) > -1
+      return (item, search, textKey) =>
+        item[textKey].toLowerCase().indexOf(search.toLowerCase()) > -1
     },
     show: {
       get() {
