@@ -26,7 +26,7 @@
       <v-list dense nav>
         <v-list-item v-for="item in items" :key="item.name" link :to="item.to">
           <v-list-item-icon>
-            <v-icon>{{ item.icon }}</v-icon>
+            {{ item.icon }}
           </v-list-item-icon>
 
           <v-list-item-content>
@@ -35,12 +35,46 @@
         </v-list-item>
 
         <v-list-item :href="serverUrl" target="_blank">
-          <v-list-item-icon>
-            <v-icon>mdi-open-in-new</v-icon>
-          </v-list-item-icon>
+          <v-list-item-icon>🌍</v-list-item-icon>
 
           <v-list-item-content>
-            <v-list-item-title>Speckle</v-list-item-title>
+            <v-list-item-title>
+              Speckle Web App
+              <v-icon x-small right class="mb-2">mdi-open-in-new</v-icon>
+            </v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-list-item href="https://speckle.community/" target="_blank">
+          <v-list-item-icon>👪</v-list-item-icon>
+
+          <v-list-item-content>
+            <v-list-item-title>
+              Community Forum
+              <v-icon x-small right class="mb-2">mdi-open-in-new</v-icon>
+            </v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-list-item href="https://speckle.systems/tag/excel/" target="_blank">
+          <v-list-item-icon>📺</v-list-item-icon>
+
+          <v-list-item-content>
+            <v-list-item-title>
+              Tutorials
+              <v-icon x-small right class="mb-2">mdi-open-in-new</v-icon>
+            </v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-list-item href="https://speckle.guide/user/excel.html" target="_blank">
+          <v-list-item-icon>📚</v-list-item-icon>
+
+          <v-list-item-content>
+            <v-list-item-title>
+              Docs
+              <v-icon x-small right class="mb-2">mdi-open-in-new</v-icon>
+            </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -77,17 +111,17 @@ export default {
     items: [
       {
         name: 'Add stream',
-        icon: 'mdi-plus',
+        icon: '➕',
         to: '/add'
       },
       {
         name: 'Streams',
-        icon: 'mdi-format-list-bulleted',
+        icon: '📃',
         to: '/'
       },
       {
         name: 'Log out',
-        icon: 'mdi-logout',
+        icon: '🏃‍♂️',
         to: '/logout'
       }
     ]
