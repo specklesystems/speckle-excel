@@ -14,28 +14,41 @@ Comprehensive developer and user documentation can be found in our:
 
 ## Developing & Debugging
 
-Register the app:
+### App Set up
 
-- create a Speckle App on your server
+For developing and debugging this connector you'll need to set up a Speckle App.
+The server on which the app runs must be on `https`, so **do not use a local Speckle server** on `http://localhost:3000/` as it will not work.
+
+You can use `https://latest.speckle.dev/` or `https://speckle.xyz/`.
+
+Now open up its frontend, and under your profile register a new app.
+
+I've used the following values since my excel-connector app is running at `https://localhost:3000`:
+
+- name: ExcelConnector
+- redirect url: `https://localhost:3000`
+- permissions: `streams:read, streams:write, profile:read, profile:email, users:read`
+
+Take note of the `app id` and `secret`, then in your speckle-excel repo:
+
 - duplicate `.env sample` to `.env.local`
-- then fill it in with your variables
+- then fill it in with your new `app id` and `secret`
+- note that the `BASE_URL=https://localhost:3000`
+
+### Running the connector locally
 
 Run it locally:
 
-- `npm install`
+- `npm install` (first time only)
 - `npm run serve`
-- *You might be prompted to install some certificates, go ahead and accept*
-- *Wait for the the process to start the Vue app, then in a separate terminal either*
+- _You might be prompted to install some certificates, go ahead and accept_
+- _Wait for the the process to start the Vue app, then in a separate terminal either_
   - `npm run excel` will run excel desktop and sideload the plugin
   - `npm run excel:web` will run excel web, open the document defined in `packages.json` and sideload the plugin
 
 If this worked out well, you should see the connector sideloaded correctly:
 
-
-
 ![image](https://user-images.githubusercontent.com/2679513/119171684-cdf3da00-ba5c-11eb-87a5-bee798f96f90.png)
-
-
 
 ## Contributing
 
