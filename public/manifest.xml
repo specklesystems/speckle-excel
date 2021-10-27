@@ -31,7 +31,7 @@
     <Host Name="Workbook" />
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://localhost:3000/" />
+    <SourceLocation DefaultValue="https://localhost:3001/" />
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
