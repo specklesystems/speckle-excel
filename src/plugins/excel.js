@@ -141,7 +141,7 @@ export async function receiveLatest(reference, _streamId, _commitId, _commitMsg,
       item = item[part]
     }
 
-    await bake(item, _streamId, null, receiverSelection.headers, receiverSelection.range)
+    await bake(item, _streamId, null, receiverSelection.headers, receiverSelection.range, _commitId, _commitMsg)
   } catch (e) {
     //pokemon
     console.log(e)
@@ -150,14 +150,9 @@ export async function receiveLatest(reference, _streamId, _commitId, _commitMsg,
       color: 'error'
     })
   }
-  //////////////////////////////
+  /*//////////////////////////////
   try {
     await window.Excel.run(async (context) => {
-      //let sheetName = savedStream.selection.split('!')[0].replace(/'/g, '')
-      //let rangeAddress = savedStream.selection.split('!')[1]
-      //let sheet = context.workbook.worksheets.getItem(sheetName)
-      //let range = sheet.getRange(rangeAddress)
-      //range.load('values')
       await context.sync()
       
       await store.dispatch('receiveCommit', {
@@ -166,20 +161,14 @@ export async function receiveLatest(reference, _streamId, _commitId, _commitMsg,
         commitId: _commitId,
         message: _commitMsg
       })
-     //window._paq.push(['setCustomUrl', 'http://connectors/Excel/receive'])
-     //window._paq.push(['trackPageView', 'receive'])
-      //store.dispatch('showSnackbar', {
-      //message: 'Data sent successfully'
-      //})
     })
   } catch (e) {
     //pokemon
     console.log(e)
   }
-
-  ///////////////////////////////
+  */ ///////////////////////////////
 }
-export async function bake(data, _streamId, modal, previousHeaders, previousRange) {
+export async function bake(data, _streamId, modal, previousHeaders, previousRange, _commitId, _commitMsg) {
   try {
     let address, range
     let selectedHeaders = previousHeaders
@@ -257,6 +246,25 @@ export async function bake(data, _streamId, modal, previousHeaders, previousRang
       message: 'Data received successfully'
     })
     let receiverSelection = { headers: selectedHeaders, range: address }
+
+    //////////////////////////////
+    try {
+      await window.Excel.run(async (context) => {
+        await context.sync()
+        
+        await store.dispatch('receiveCommit', {
+          sourceApplication: "Excel",
+          streamId: _streamId,
+          commitId: _commitId,
+          message: _commitMsg
+        })
+      })
+    } catch (e) {
+      //pokemon
+      console.log(e)
+    }
+  ////////////////////////////////
+
     return receiverSelection
     // eslint-disable-next-line no-unreachable
   } catch (e) {

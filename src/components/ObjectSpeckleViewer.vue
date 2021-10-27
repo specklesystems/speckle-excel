@@ -80,6 +80,14 @@ export default {
     downloadable: {
       type: Boolean,
       default: true
+    },
+    commit_id: {
+      type: String,
+      default: null
+    },
+    commit_msg: {
+      type: String,
+      default: null
     }
   },
   data() {
@@ -171,8 +179,8 @@ export default {
       this.progress = true
       let receiverSelection
       if (this.object)
-        receiverSelection = await bake(this.object.data, this.streamId, this.$refs.modal)
-      else receiverSelection = await bake(this.value, this.streamId, this.$refs.modal)
+        receiverSelection = await bake(this.object.data, this.streamId, this.$refs.modal, this.commit_id, this.commit_msg) // add variables for RR
+      else receiverSelection = await bake(this.value, this.streamId, this.$refs.modal, this.commit_id, this.commit_msg) // add variables for RR
 
       if (receiverSelection) {
         receiverSelection.fullKeyName = this.fullKeyName
