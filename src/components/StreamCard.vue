@@ -477,6 +477,8 @@ export default {
       await receiveLatest(
         this.selectedCommit.referencedObject,
         this.stream.id,
+        this.selectedCommit.id,
+        this.selectedCommit.message,
         this.savedStream.receiverSelection
       )
       this.progress = false

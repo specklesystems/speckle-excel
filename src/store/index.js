@@ -240,6 +240,54 @@ export default new Vuex.Store({
         })
       })
     },
+    async receiveCommit(context, { sourceApplication, streamId, commitId, message }) {
+      ///////////////////////////////////////////
+      let query = `mutation objectReceive ($myInput:CommitReceivedInput!) {commitReceive(input:$myInput)}`
+
+      let serverUrl = localStorage.getItem('serverUrl')
+      let token = localStorage.getItem(TOKEN)
+
+      let response = await fetch(`${serverUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: query,
+          variables: {
+            object: {
+              streamId: streamId,
+              objects: [{ data: object, speckle_type: 'Base' }]
+            }
+          }
+        })
+      })
+      //let data = await response.json()
+      //let objectId = data.data.objectCreate[0]
+
+      //query = `mutation commitCreate($myCommit: CommitCreateInput!){ commitCreate(commit: $myCommit)}`
+
+      response = await fetch(`${serverUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: query,
+          variables: {
+            myCommit: {
+              streamId: streamId,
+              commitId: commitId,
+              message: message ? message : 'Data received in Excel',
+              sourceApplication: sourceApplication
+            }
+          }
+        })
+      })
+      ///////////////////////////////////////
+    },
     async getUser(context) {
       try {
         let query = `query {

@@ -130,7 +130,7 @@ function hasObjects(data) {
   return false
 }
 
-export async function receiveLatest(reference, _streamId, receiverSelection) {
+export async function receiveLatest(reference, _streamId, _commitId, _commitMsg, receiverSelection) {
   try {
     //TODO: only get objs that are needed?
     streamId = _streamId
@@ -150,6 +150,34 @@ export async function receiveLatest(reference, _streamId, receiverSelection) {
       color: 'error'
     })
   }
+  //////////////////////////////
+  try {
+    await window.Excel.run(async (context) => {
+      //let sheetName = savedStream.selection.split('!')[0].replace(/'/g, '')
+      //let rangeAddress = savedStream.selection.split('!')[1]
+      //let sheet = context.workbook.worksheets.getItem(sheetName)
+      //let range = sheet.getRange(rangeAddress)
+      //range.load('values')
+      await context.sync()
+      
+      await store.dispatch('receiveCommit', {
+        sourceApplication: "Excel",
+        streamId: _streamId,
+        commitId: _commitId,
+        message: _commitMsg
+      })
+     //window._paq.push(['setCustomUrl', 'http://connectors/Excel/receive'])
+     //window._paq.push(['trackPageView', 'receive'])
+      //store.dispatch('showSnackbar', {
+      //message: 'Data sent successfully'
+      //})
+    })
+  } catch (e) {
+    //pokemon
+    console.log(e)
+  }
+
+  ///////////////////////////////
 }
 export async function bake(data, _streamId, modal, previousHeaders, previousRange) {
   try {
