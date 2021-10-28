@@ -221,29 +221,23 @@ export async function bake(data, _streamId, _commitId, _commitMsg, modal, previo
 
       await bakeArray(arrayData, context)
       await context.sync()
-    })
-    window._paq.push(['setCustomUrl', 'http://connectors/Excel/receive'])
-    window._paq.push(['trackPageView', 'receive'])
 
-    store.dispatch('showSnackbar', {
-      message: 'Data received successfully'
-    })
-    let receiverSelection = { headers: selectedHeaders, range: address }
-
-    //////////////////////////////
-    if (arrayData.length>0 ) {
-      //await window.Excel.run(async (context) => {
-        //await context.sync()
-        
       await store.dispatch('receiveCommit', {
         sourceApplication: "Excel",
         streamId: _streamId,
         commitId: _commitId,
         message: _commitMsg
       })
-      //})
-    }
-  ////////////////////////////////
+      
+      store.dispatch('showSnackbar', {
+        message: 'Data received successfully'
+      })
+
+    })
+    window._paq.push(['setCustomUrl', 'http://connectors/Excel/receive'])
+    window._paq.push(['trackPageView', 'receive'])
+
+    let receiverSelection = { headers: selectedHeaders, range: address }
 
     return receiverSelection
     // eslint-disable-next-line no-unreachable
