@@ -38,6 +38,8 @@
         :full-key-name="fullKeyName ? `${fullKeyName}.${entry.key}` : entry.key"
         :value="entry.value"
         :stream-id="streamId"
+        :commit-id="commitId"
+        :commit-msg="commitMsg"
       ></component>
     </v-card-text>
     <filter-modal ref="modal" />
@@ -81,11 +83,11 @@ export default {
       type: Boolean,
       default: true
     },
-    commit_id: {
+    commitId: {
       type: String,
       default: null
     },
-    commit_msg: {
+    commitMsg: {
       type: String,
       default: null
     }
@@ -178,9 +180,13 @@ export default {
     async bake() {
       this.progress = true
       let receiverSelection
+
+      console.log("SpeckleViewer")
+      console.log(this.commitId)
+      console.log(this.commitMsg)
       if (this.object)
-        receiverSelection = await bake(this.object.data, this.streamId, this.$refs.modal, this.commit_id, this.commit_msg) // add variables for RR
-      else receiverSelection = await bake(this.value, this.streamId, this.$refs.modal, this.commit_id, this.commit_msg) // add variables for RR
+        receiverSelection = await bake(this.object.data, this.streamId, this.$refs.modal, this.commitId, this.commitMsg)
+      else receiverSelection = await bake(this.value, this.streamId, this.$refs.modal, this.commitId, this.commitMsg)
 
       if (receiverSelection) {
         receiverSelection.fullKeyName = this.fullKeyName

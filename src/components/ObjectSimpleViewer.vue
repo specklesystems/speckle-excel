@@ -32,6 +32,8 @@
         :full-key-name="fullKeyName ? `${fullKeyName}.${entry.key}` : entry.key"
         :value="entry.value"
         :stream-id="streamId"
+        :commit-id="commitId"
+        :commit-msg="commitMsg"
       ></component>
     </v-card-text>
     <filter-modal ref="modal" />
@@ -65,11 +67,11 @@ export default {
       type: String,
       default: null
     },
-    commit_id: {
+    commitId: {
       type: String,
       default: null
     },
-    commit_msg: {
+    commitMsg: {
       type: String,
       default: null
     }
@@ -140,8 +142,8 @@ export default {
     },
     async bake() {
       this.progress = true
-
-      let receiverSelection = await bake(this.value, this.streamId, this.$refs.modal, this.commit_id, this.commit_msg)
+      console.log("SimpleViewer")
+      let receiverSelection = await bake(this.value, this.streamId, this.$refs.modal, this.commitId, this.commitMsg)
       if (receiverSelection) {
         receiverSelection.fullKeyName = this.fullKeyName
 

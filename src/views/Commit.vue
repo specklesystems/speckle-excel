@@ -51,6 +51,8 @@
             :value="commitObject"
             :downloadable="false"
             :expand="true"
+            :commit-id="stream.commit.id"
+            :commit-msg="stream.commit.message"
           ></object-speckle-viewer>
         </v-card>
       </v-col>

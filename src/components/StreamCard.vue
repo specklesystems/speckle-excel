@@ -474,6 +474,9 @@ export default {
     },
     async receiveLatest() {
       this.progress = true
+      console.log("RECEIVE LATEST")
+      console.log(this.selectedCommit.id)
+      console.log( this.selectedCommit.message)
       await receiveLatest(
         this.selectedCommit.referencedObject,
         this.stream.id,
