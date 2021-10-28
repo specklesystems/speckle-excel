@@ -181,12 +181,9 @@ export default {
       this.progress = true
       let receiverSelection
 
-      console.log("SpeckleViewer")
-      console.log(this.commitId)
-      console.log(this.commitMsg)
       if (this.object)
-        receiverSelection = await bake(this.object.data, this.streamId, this.$refs.modal, this.commitId, this.commitMsg)
-      else receiverSelection = await bake(this.value, this.streamId, this.$refs.modal, this.commitId, this.commitMsg)
+        receiverSelection = await bake(this.object.data, this.streamId, this.commitId, this.commitMsg, this.$refs.modal)
+      else receiverSelection = await bake(this.value, this.streamId, this.commitId, this.commitMsg, this.$refs.modal)
 
       if (receiverSelection) {
         receiverSelection.fullKeyName = this.fullKeyName

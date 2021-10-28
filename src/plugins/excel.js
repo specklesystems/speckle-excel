@@ -141,7 +141,7 @@ export async function receiveLatest(reference, _streamId, _commitId, _commitMsg,
       item = item[part]
     }
 
-    await bake(item, _streamId, null, receiverSelection.headers, receiverSelection.range, _commitId, _commitMsg)
+    await bake(item, _streamId, _commitId, _commitMsg, null, receiverSelection.headers, receiverSelection.range)
   } catch (e) {
     //pokemon
     console.log(e)
@@ -150,25 +150,8 @@ export async function receiveLatest(reference, _streamId, _commitId, _commitMsg,
       color: 'error'
     })
   }
-  /*//////////////////////////////
-  try {
-    await window.Excel.run(async (context) => {
-      await context.sync()
-      
-      await store.dispatch('receiveCommit', {
-        sourceApplication: "Excel",
-        streamId: _streamId,
-        commitId: _commitId,
-        message: _commitMsg
-      })
-    })
-  } catch (e) {
-    //pokemon
-    console.log(e)
-  }
-  */ ///////////////////////////////
 }
-export async function bake(data, _streamId, modal, previousHeaders, previousRange, _commitId, _commitMsg) {
+export async function bake(data, _streamId, _commitId, _commitMsg, modal, previousHeaders, previousRange) {
   try {
     let address, range
     let selectedHeaders = previousHeaders
@@ -248,20 +231,17 @@ export async function bake(data, _streamId, modal, previousHeaders, previousRang
     let receiverSelection = { headers: selectedHeaders, range: address }
 
     //////////////////////////////
-    try {
-      await window.Excel.run(async (context) => {
-        await context.sync()
+    if (arrayData.length>0 ) {
+      //await window.Excel.run(async (context) => {
+        //await context.sync()
         
-        await store.dispatch('receiveCommit', {
-          sourceApplication: "Excel",
-          streamId: _streamId,
-          commitId: _commitId,
-          message: _commitMsg
-        })
+      await store.dispatch('receiveCommit', {
+        sourceApplication: "Excel",
+        streamId: _streamId,
+        commitId: _commitId,
+        message: _commitMsg
       })
-    } catch (e) {
-      //pokemon
-      console.log(e)
+      //})
     }
   ////////////////////////////////
 
