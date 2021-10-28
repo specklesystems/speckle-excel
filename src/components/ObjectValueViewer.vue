@@ -24,6 +24,14 @@ export default {
     fullKeyName: {
       type: String,
       default: null
+    },
+    commitId: {
+      type: String,
+      default: null
+    },
+    commitMsg: {
+      type: String,
+      default: null
     }
   }
 }

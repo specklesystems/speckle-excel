@@ -38,6 +38,8 @@
         :full-key-name="fullKeyName ? `${fullKeyName}.${entry.key}` : entry.key"
         :value="entry.value"
         :stream-id="streamId"
+        :commit-id="commitId"
+        :commit-msg="commitMsg"
       ></component>
     </v-card-text>
     <filter-modal ref="modal" />
@@ -80,6 +82,14 @@ export default {
     downloadable: {
       type: Boolean,
       default: true
+    },
+    commitId: {
+      type: String,
+      default: null
+    },
+    commitMsg: {
+      type: String,
+      default: null
     }
   },
   data() {
@@ -170,9 +180,23 @@ export default {
     async bake() {
       this.progress = true
       let receiverSelection
+
       if (this.object)
-        receiverSelection = await bake(this.object.data, this.streamId, this.$refs.modal)
-      else receiverSelection = await bake(this.value, this.streamId, this.$refs.modal)
+        receiverSelection = await bake(
+          this.object.data,
+          this.streamId,
+          this.commitId,
+          this.commitMsg,
+          this.$refs.modal
+        )
+      else
+        receiverSelection = await bake(
+          this.value,
+          this.streamId,
+          this.commitId,
+          this.commitMsg,
+          this.$refs.modal
+        )
 
       if (receiverSelection) {
         receiverSelection.fullKeyName = this.fullKeyName
