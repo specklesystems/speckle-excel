@@ -142,8 +142,14 @@ export default {
     },
     async bake() {
       this.progress = true
-      
-      let receiverSelection = await bake(this.value, this.streamId, this.commitId, this.commitMsg, this.$refs.modal)
+
+      let receiverSelection = await bake(
+        this.value,
+        this.streamId,
+        this.commitId,
+        this.commitMsg,
+        this.$refs.modal
+      )
       if (receiverSelection) {
         receiverSelection.fullKeyName = this.fullKeyName
 

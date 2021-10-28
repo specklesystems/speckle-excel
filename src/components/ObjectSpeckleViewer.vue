@@ -182,8 +182,21 @@ export default {
       let receiverSelection
 
       if (this.object)
-        receiverSelection = await bake(this.object.data, this.streamId, this.commitId, this.commitMsg, this.$refs.modal)
-      else receiverSelection = await bake(this.value, this.streamId, this.commitId, this.commitMsg, this.$refs.modal)
+        receiverSelection = await bake(
+          this.object.data,
+          this.streamId,
+          this.commitId,
+          this.commitMsg,
+          this.$refs.modal
+        )
+      else
+        receiverSelection = await bake(
+          this.value,
+          this.streamId,
+          this.commitId,
+          this.commitMsg,
+          this.$refs.modal
+        )
 
       if (receiverSelection) {
         receiverSelection.fullKeyName = this.fullKeyName

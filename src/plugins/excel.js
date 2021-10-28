@@ -130,7 +130,13 @@ function hasObjects(data) {
   return false
 }
 
-export async function receiveLatest(reference, _streamId, _commitId, _commitMsg, receiverSelection) {
+export async function receiveLatest(
+  reference,
+  _streamId,
+  _commitId,
+  _commitMsg,
+  receiverSelection
+) {
   try {
     //TODO: only get objs that are needed?
     streamId = _streamId
@@ -141,7 +147,15 @@ export async function receiveLatest(reference, _streamId, _commitId, _commitMsg,
       item = item[part]
     }
 
-    await bake(item, _streamId, _commitId, _commitMsg, null, receiverSelection.headers, receiverSelection.range)
+    await bake(
+      item,
+      _streamId,
+      _commitId,
+      _commitMsg,
+      null,
+      receiverSelection.headers,
+      receiverSelection.range
+    )
   } catch (e) {
     //pokemon
     console.log(e)
@@ -151,7 +165,15 @@ export async function receiveLatest(reference, _streamId, _commitId, _commitMsg,
     })
   }
 }
-export async function bake(data, _streamId, _commitId, _commitMsg, modal, previousHeaders, previousRange) {
+export async function bake(
+  data,
+  _streamId,
+  _commitId,
+  _commitMsg,
+  modal,
+  previousHeaders,
+  previousRange
+) {
   try {
     let address, range
     let selectedHeaders = previousHeaders
@@ -223,16 +245,15 @@ export async function bake(data, _streamId, _commitId, _commitMsg, modal, previo
       await context.sync()
 
       await store.dispatch('receiveCommit', {
-        sourceApplication: "Excel",
+        sourceApplication: 'Excel',
         streamId: _streamId,
         commitId: _commitId,
         message: _commitMsg
       })
-      
+
       store.dispatch('showSnackbar', {
         message: 'Data received successfully'
       })
-
     })
     window._paq.push(['setCustomUrl', 'http://connectors/Excel/receive'])
     window._paq.push(['trackPageView', 'receive'])
