@@ -10,5 +10,5 @@ module.exports = {
       'Access-Control-Allow-Origin': '*'
     }
   },
-  transpileDependencies: ['vuetify', '@speckle/objectloader']
+  transpileDependencies: ['vuetify', '@speckle/objectloader', 'flatted', 'vuex-persist']
 }
