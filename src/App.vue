@@ -96,12 +96,24 @@
     </v-app-bar>
 
     <v-main :style="background">
-      <router-view />
+      <router-view v-if="!isIE11" />
+
+      <v-container v-else>
+        <v-row align="center">
+          <v-col class="pa-5 ma-5" align="center">
+            <span class="subtitle pa-5">
+              Sorry, this Excel version is not supported as it still uses IE 11, please update it or
+              use Excel Online.
+            </span>
+          </v-col>
+        </v-row>
+      </v-container>
     </v-main>
   </v-app>
 </template>
 
 <script>
+var isIe11 = !!window.MSInputMethodContext && !!document.documentMode
 export default {
   name: 'App',
   components: {},
@@ -127,6 +139,9 @@ export default {
     ]
   }),
   computed: {
+    isIE11() {
+      return isIe11
+    },
     isAuthenticated() {
       if (!this.$store.state) return false
       return this.$store.getters.isAuthenticated
