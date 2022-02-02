@@ -204,6 +204,7 @@
               <v-card-text class="caption">
                 Receiving data from the Speckleverse...
                 <v-progress-linear class="mt-2" indeterminate color="primary"></v-progress-linear>
+                <v-btn class="mt-3" outlined x-small color="primary" @click="cancel">Cancel</v-btn>
               </v-card-text>
             </v-card>
           </v-dialog>
@@ -273,6 +274,8 @@ import streamQuery from '../graphql/stream.gql'
 import { send, receiveLatest } from '../plugins/excel'
 import gql from 'graphql-tag'
 import { createClient } from '../vue-apollo'
+
+let ac = new AbortController()
 
 export default {
   props: {
@@ -471,12 +474,18 @@ export default {
       this.$mixpanel.track('Excel Action', { name: 'Stream Remove' })
       return this.$store.dispatch('removeStream', this.savedStream.id)
     },
+    cancel() {
+      ac.abort()
+    },
     async send() {
       this.$mixpanel.track('Send')
       send(this.savedStream, this.stream.id, this.selectedBranch.name, this.message)
     },
     async receiveLatest() {
       this.$mixpanel.track('Receive')
+      ac = new AbortController()
+
+      console.log(this.savedStream.receiverSelection)
 
       this.progress = true
       await receiveLatest(
@@ -484,7 +493,8 @@ export default {
         this.stream.id,
         this.selectedCommit.id,
         this.selectedCommit.message,
-        this.savedStream.receiverSelection
+        this.savedStream.receiverSelection,
+        ac.signal
       )
       this.progress = false
     },

@@ -9,32 +9,36 @@ let ignoreEndsWithProps = ['id', 'totalChildrenCount']
 let streamId, sheet, rowStart, colStart, arrayData, isTabularData
 let headerIndices = []
 
-async function flattenData(item) {
+async function flattenData(item, signal) {
+  if (signal.aborted) return
   if (Array.isArray(item)) {
     for (let o of item) {
-      await flattenSingle(o)
+      if (signal.aborted) return
+      await flattenSingle(o, signal)
     }
   } else {
-    await flattenSingle(item)
+    await flattenSingle(item, signal)
   }
 }
 
-async function getReferencedObject(reference) {
+async function getReferencedObject(reference, signal) {
+  if (signal.aborted) return
   let loader = await store.dispatch('getObject', {
     streamId: streamId,
     objectId: reference,
     options: {
       fullyTraverseArrays: false,
       excludeProps: ['displayValue', 'displayMesh', '__closure', 'elements']
-    }
+    },
+    signal
   })
 
   return await loader.getAndConstructObject()
 }
 
-async function flattenSingle(item) {
+async function flattenSingle(item, signal) {
   if (item.speckle_type && item.speckle_type == 'reference') {
-    item = await getReferencedObject(item.referencedId)
+    item = await getReferencedObject(item.referencedId, signal)
   }
 
   let flat = flatten(item)
@@ -135,24 +139,26 @@ export async function receiveLatest(
   _streamId,
   _commitId,
   _commitMsg,
-  receiverSelection
+  receiverSelection,
+  signal
 ) {
   try {
     //TODO: only get objs that are needed?
     streamId = _streamId
-    let item = await getReferencedObject(reference)
+    let item = await getReferencedObject(reference, signal)
     let parts = receiverSelection.fullKeyName.split('.')
     //picks the sub-object on which the user previously clicked `bake`
     for (let part of parts) {
       item = item[part]
     }
-
+    console.log(signal)
     await bake(
       item,
       _streamId,
       _commitId,
       _commitMsg,
       null,
+      signal,
       receiverSelection.headers,
       receiverSelection.range
     )
@@ -171,6 +177,7 @@ export async function bake(
   _commitId,
   _commitMsg,
   modal,
+  signal,
   previousHeaders,
   previousRange
 ) {
@@ -204,9 +211,12 @@ export async function bake(
       //if the incoming data has objects we need to flatten them to an array
       //otherwise we just output it
       isTabularData = true
-      if (hasObjects(data)) {
+
+      if (signal.aborted) return
+      if (hasObjects(data, signal)) {
+        console.log('has objects')
         isTabularData = false
-        await flattenData(data)
+        await flattenData(data, signal)
         //transpose 2d array, sort alphabetically, then transpose again
         //this helps ensure the order of the baked columns is the same across streams
         arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
@@ -214,10 +224,12 @@ export async function bake(
         arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
       } else arrayData = data
 
+      if (signal.aborted) return
+
       if (!isTabularData && arrayData[0].length > 25) {
         //it's manual run
-        if (!previousHeaders) {
-          let headers = headerListToTree(arrayData[0])
+        if (!previousHeaders && modal) {
+          let headers = headerListToTree(arrayData[0], signal)
           let dialog = await modal.open(
             headers,
             `You are about to receive ${arrayData[0].length} columns and ${arrayData.length} rows, you can filter them below.`
@@ -233,13 +245,15 @@ export async function bake(
             //construct a list of the index of each header to include
             for (let item of selectedHeaders) headerIndices.push(arrayData[0].indexOf(item))
           }
-        } else {
+        } else if (previousHeaders) {
           for (let item of previousHeaders) {
             let index = arrayData[0].indexOf(item)
             if (index !== -1) headerIndices.push(index)
           }
         }
       }
+
+      if (signal.aborted) return
 
       await bakeArray(arrayData, context)
       await context.sync()
@@ -265,8 +279,12 @@ export async function bake(
   } catch (e) {
     //pokemon
     console.log(e)
+
+    let m = 'Something went wrong: ' + e
+    if (e.name !== 'AbortError') m = 'Operation cancelled'
+
     store.dispatch('showSnackbar', {
-      message: 'Something went wrong: ' + e,
+      message: m,
       color: 'error'
     })
   }
@@ -324,8 +342,11 @@ export async function send(savedStream, streamId, branchName, message) {
   } catch (e) {
     //pokemon
     console.log(e)
+    let m = 'Something went wrong: ' + e
+    if (e.name !== 'AbortError') m = 'Operation cancelled'
+
     store.dispatch('showSnackbar', {
-      message: 'Something went wrong: ' + e,
+      message: m,
       color: 'error'
     })
   }

@@ -13,7 +13,9 @@
         <v-card class="pt-3">
           <v-card-text class="caption">
             Receiving data from the Speckleverse...
+
             <v-progress-linear class="mt-2" indeterminate color="primary"></v-progress-linear>
+            <v-btn class="mt-3" outlined x-small color="primary" @click="cancel">Cancel</v-btn>
           </v-card-text>
         </v-card>
       </v-dialog>
@@ -42,6 +44,7 @@
 </template>
 <script>
 import { bake } from '../plugins/excel'
+let ac = new AbortController()
 export default {
   name: 'ObjectListViewer',
   components: {
@@ -137,9 +140,13 @@ export default {
     loadMore() {
       this.currentLimit += this.itemsPerLoad
     },
+    cancel() {
+      ac.abort()
+    },
     async bake() {
-      this.progress = true
+      ac = new AbortController()
 
+      this.progress = true
       this.$mixpanel.track('Receive')
 
       let receiverSelection = await bake(
@@ -147,7 +154,8 @@ export default {
         this.streamId,
         this.commitId,
         this.commitMsg,
-        this.$refs.modal
+        this.$refs.modal,
+        ac.signal
       )
       if (receiverSelection) {
         receiverSelection.fullKeyName = this.fullKeyName

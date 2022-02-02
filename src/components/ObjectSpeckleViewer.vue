@@ -16,6 +16,7 @@
           <v-card-text class="caption">
             Receiving data from the Speckleverse...
             <v-progress-linear class="mt-2" indeterminate color="primary"></v-progress-linear>
+            <v-btn class="mt-3" outlined x-small color="primary" @click="cancel">Cancel</v-btn>
           </v-card-text>
         </v-card>
       </v-dialog>
@@ -49,6 +50,8 @@
 import objectQuery from '../graphql/object.gql'
 import { bake } from '../plugins/excel'
 import { createClient } from '../vue-apollo'
+
+let ac = new AbortController()
 
 export default {
   name: 'ObjectSpeckleViewer',
@@ -177,8 +180,12 @@ export default {
     toggleLoadExpand() {
       this.localExpand = !this.localExpand
     },
+    cancel() {
+      ac.abort()
+    },
     async bake() {
       this.progress = true
+      ac = new AbortController()
       let receiverSelection
 
       this.$mixpanel.track('Receive')
@@ -189,7 +196,8 @@ export default {
           this.streamId,
           this.commitId,
           this.commitMsg,
-          this.$refs.modal
+          this.$refs.modal,
+          ac.signal
         )
       else
         receiverSelection = await bake(
@@ -197,7 +205,8 @@ export default {
           this.streamId,
           this.commitId,
           this.commitMsg,
-          this.$refs.modal
+          this.$refs.modal,
+          ac.signal
         )
 
       if (receiverSelection) {
