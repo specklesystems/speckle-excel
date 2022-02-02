@@ -272,6 +272,7 @@ export default new Vuex.Store({
         id
         suuid
         name
+        email
         avatar
       },
       serverInfo {
