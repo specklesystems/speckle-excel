@@ -444,6 +444,7 @@ export default {
     swapReceiver() {
       let s = { ...this.savedStream }
       s.isReceiver = !s.isReceiver
+      this.$mixpanel.track('Excel Action', { name: 'Stream Swap Receive/Send' })
       this.$store.dispatch('updateStream', s)
     },
 
@@ -467,12 +468,16 @@ export default {
     },
 
     remove() {
+      this.$mixpanel.track('Excel Action', { name: 'Stream Remove' })
       return this.$store.dispatch('removeStream', this.savedStream.id)
     },
     async send() {
+      this.$mixpanel.track('Send')
       send(this.savedStream, this.stream.id, this.selectedBranch.name, this.message)
     },
     async receiveLatest() {
+      this.$mixpanel.track('Receive')
+
       this.progress = true
       await receiveLatest(
         this.selectedCommit.referencedObject,

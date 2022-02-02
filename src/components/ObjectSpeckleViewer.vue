@@ -181,6 +181,8 @@ export default {
       this.progress = true
       let receiverSelection
 
+      this.$mixpanel.track('Receive')
+
       if (this.object)
         receiverSelection = await bake(
           this.object.data,

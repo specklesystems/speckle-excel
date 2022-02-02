@@ -143,6 +143,8 @@ export default {
     async bake() {
       this.progress = true
 
+      this.$mixpanel.track('Receive')
+
       let receiverSelection = await bake(
         this.value,
         this.streamId,

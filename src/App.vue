@@ -114,6 +114,7 @@
 
 <script>
 var isIe11 = !!window.MSInputMethodContext && !!document.documentMode
+const crypto = require('crypto')
 export default {
   name: 'App',
   components: {},
@@ -177,7 +178,35 @@ export default {
   watch: {
     snackbar() {
       if (this.snackbar.message) this.showSnackbar = true
+    },
+    isAuthenticated(newVal) {
+      console.log(this.user)
+      if (newVal) {
+        let server_id = crypto
+          .createHash('md5')
+          .update(new URL(this.serverUrl).hostname.toLowerCase())
+          .digest('hex')
+          .toUpperCase()
+
+        let distinct_id =
+          '@' +
+          crypto.createHash('md5').update(this.user.email.toLowerCase()).digest('hex').toUpperCase()
+
+        console.log(server_id)
+        console.log(distinct_id)
+
+        this.$mixpanel.register({ server_id: server_id, hostApp: 'excel' })
+
+        this.$mixpanel.identify(distinct_id)
+        this.$mixpanel.track('Excel Action', { name: 'Log In' })
+      } else {
+        this.$mixpanel.track('Excel Action', { name: 'Log Out' })
+        this.$mixpanel.reset()
+      }
     }
+  },
+  mounted() {
+    this.$mixpanel.track('Excel Action', { name: 'Launched', hostApp: 'excel' })
   }
 }
 </script>
