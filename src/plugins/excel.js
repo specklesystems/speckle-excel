@@ -23,6 +23,7 @@ async function flattenData(item, signal) {
 
 async function getReferencedObject(reference, signal) {
   if (signal.aborted) return
+
   let loader = await store.dispatch('getObject', {
     streamId: streamId,
     objectId: reference,
@@ -44,6 +45,7 @@ async function flattenSingle(item, signal) {
   let flat = flatten(item)
   let rowData = []
   for (const [key, value] of Object.entries(flat)) {
+    if (key === null || value === null) continue
     if (ignoreEndsWithProps.findIndex((x) => key.endsWith(x)) !== -1) continue
 
     let colIndex = arrayData[0].findIndex((x) => x === key)
@@ -151,7 +153,7 @@ export async function receiveLatest(
     for (let part of parts) {
       item = item[part]
     }
-    console.log(signal)
+
     await bake(
       item,
       _streamId,
@@ -214,7 +216,6 @@ export async function bake(
 
       if (signal.aborted) return
       if (hasObjects(data, signal)) {
-        console.log('has objects')
         isTabularData = false
         await flattenData(data, signal)
         //transpose 2d array, sort alphabetically, then transpose again
