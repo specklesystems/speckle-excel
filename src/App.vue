@@ -195,18 +195,18 @@ export default {
         console.log(server_id)
         console.log(distinct_id)
 
-        this.$mixpanel.register({ server_id: server_id, hostApp: 'excel' })
+        this.$mixpanel.register({ server_id: server_id, hostApp: 'excel', type: 'action' })
 
         this.$mixpanel.identify(distinct_id)
-        this.$mixpanel.track('Excel Action', { name: 'Log In' })
+        this.$mixpanel.track('Connector Action', { name: 'Log In' })
       } else {
-        this.$mixpanel.track('Excel Action', { name: 'Log Out' })
+        this.$mixpanel.track('Connector Action', { name: 'Log Out' })
         this.$mixpanel.reset()
       }
     }
   },
   mounted() {
-    this.$mixpanel.track('Excel Action', { name: 'Launched', hostApp: 'excel' })
+    this.$mixpanel.track('Connector Action', { name: 'Launched', hostApp: 'excel' })
   }
 }
 </script>

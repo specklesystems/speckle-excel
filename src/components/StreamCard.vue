@@ -447,7 +447,7 @@ export default {
     swapReceiver() {
       let s = { ...this.savedStream }
       s.isReceiver = !s.isReceiver
-      this.$mixpanel.track('Excel Action', { name: 'Stream Swap Receive/Send' })
+      this.$mixpanel.track('Connector Action', { name: 'Stream Swap Receive/Send', type: 'action' })
       this.$store.dispatch('updateStream', s)
     },
 
@@ -471,7 +471,7 @@ export default {
     },
 
     remove() {
-      this.$mixpanel.track('Excel Action', { name: 'Stream Remove' })
+      this.$mixpanel.track('Connector Action', { name: 'Stream Remove' })
       return this.$store.dispatch('removeStream', this.savedStream.id)
     },
     cancel() {

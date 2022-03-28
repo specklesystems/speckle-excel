@@ -136,7 +136,7 @@ export default {
   mounted() {
     this.$matomo && this.$matomo.setCustomUrl(`http://connectors/Excel/stream/list`)
     this.$matomo && this.$matomo.trackPageView(`stream/list`)
-    this.$mixpanel.track('Excel Action', { name: 'Stream List' })
+    this.$mixpanel.track('Connector Action', { name: 'Stream List' })
   },
   methods: {
     infiniteHandler($state) {
