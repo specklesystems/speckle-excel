@@ -182,23 +182,7 @@ export default {
     isAuthenticated(newVal) {
       console.log(this.user)
       if (newVal) {
-        let server_id = crypto
-          .createHash('md5')
-          .update(new URL(this.serverUrl).hostname.toLowerCase())
-          .digest('hex')
-          .toUpperCase()
-
-        let distinct_id =
-          '@' +
-          crypto.createHash('md5').update(this.user.email.toLowerCase()).digest('hex').toUpperCase()
-
-        console.log(server_id)
-        console.log(distinct_id)
-
-        this.$mixpanel.register({ server_id: server_id, hostApp: 'excel', type: 'action' })
-
-        this.$mixpanel.identify(distinct_id)
-        this.$mixpanel.track('Connector Action', { name: 'Log In' })
+        this.initMixpanel()
       } else {
         this.$mixpanel.track('Connector Action', { name: 'Log Out' })
         this.$mixpanel.reset()
@@ -206,7 +190,30 @@ export default {
     }
   },
   mounted() {
+    console.log('launched')
     this.$mixpanel.track('Connector Action', { name: 'Launched', hostApp: 'excel' })
+    if (this.isAuthenticated) this.initMixpanel()
+  },
+  methods: {
+    initMixpanel() {
+      let server_id = crypto
+        .createHash('md5')
+        .update(new URL(this.serverUrl).hostname.toLowerCase())
+        .digest('hex')
+        .toUpperCase()
+
+      let distinct_id =
+        '@' +
+        crypto.createHash('md5').update(this.user.email.toLowerCase()).digest('hex').toUpperCase()
+
+      console.log(server_id)
+      console.log(distinct_id)
+
+      this.$mixpanel.register({ server_id: server_id, hostApp: 'excel', type: 'action' })
+
+      this.$mixpanel.identify(distinct_id)
+      this.$mixpanel.track('Connector Action', { name: 'Log In' })
+    }
   }
 }
 </script>
