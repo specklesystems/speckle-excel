@@ -113,7 +113,6 @@
 </template>
 
 <script>
-var isIe11 = !!window.MSInputMethodContext && !!document.documentMode
 const crypto = require('crypto')
 export default {
   name: 'App',
@@ -141,7 +140,7 @@ export default {
   }),
   computed: {
     isIE11() {
-      return isIe11
+      return navigator.userAgent.indexOf('Trident') !== -1
     },
     isAuthenticated() {
       if (!this.$store.state) return false
