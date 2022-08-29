@@ -25,10 +25,10 @@
     </noscript>
     <!-- built files will be auto injected -->
     <script type="text/javascript">
-      if (window.navigator.userAgent.indexOf('Trident') !== -1) {
+      if (window.navigator.userAgent.indexOf('Trident') > -1 || window.navigator.userAgent.indexOf('Edge') > -1) {
         //render unsupported message
         document.write(
-          '<h1><br/>Sorry, this Excel version is not supported as it still uses IE 11.<br/>Please update it or use Excel Online.</h1>'
+          '<h1><br/>Sorry, this Excel version is not supported as it still uses IE 11/Legacy Edge.<br/>Please update it or use Excel Online.</h1>'
         )
       } else {
         //render app
