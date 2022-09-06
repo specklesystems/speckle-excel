@@ -235,6 +235,7 @@ export async function bake(
             headers,
             `You are about to receive ${arrayData[0].length} columns and ${arrayData.length} rows, you can filter them below.`
           )
+          console.log(dialog)
           if (!dialog.result) {
             store.dispatch('showSnackbar', {
               message: 'Operation cancelled'
@@ -270,8 +271,6 @@ export async function bake(
         message: 'Data received successfully'
       })
     })
-    window._paq.push(['setCustomUrl', 'http://connectors/Excel/receive'])
-    window._paq.push(['trackPageView', 'receive'])
 
     let receiverSelection = { headers: selectedHeaders, range: address }
 
@@ -332,9 +331,6 @@ export async function send(savedStream, streamId, branchName, message) {
         branchName: branchName,
         message: message
       })
-
-      window._paq.push(['setCustomUrl', 'http://connectors/Excel/send'])
-      window._paq.push(['trackPageView', 'send'])
 
       store.dispatch('showSnackbar', {
         message: 'Data sent successfully'
