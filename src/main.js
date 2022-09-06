@@ -13,14 +13,6 @@ Vue.use(VueTimeago, { locale: 'en' })
 import VTooltip from 'v-tooltip'
 Vue.use(VTooltip, { defaultDelay: 300 })
 
-import VueMatomo from 'vue-matomo'
-
-Vue.use(VueMatomo, {
-  host: 'https://speckle.matomo.cloud',
-  siteId: 2,
-  userId: localStorage.getItem('suuid')
-})
-
 import VueMixpanel from 'vue-mixpanel'
 Vue.use(VueMixpanel, {
   token: 'acd87c5a50b56df91a795e999812a3a4',

@@ -160,7 +160,6 @@ export default new Vuex.Store({
       localStorage.removeItem(TOKEN)
       localStorage.removeItem('serverUrl')
       localStorage.removeItem(REFRESH_TOKEN)
-      localStorage.removeItem('suuid')
       localStorage.removeItem('uuid')
 
       window.location = window.location.origin
@@ -269,8 +268,7 @@ export default new Vuex.Store({
       try {
         let query = `query {
       user {
-        id
-        suuid
+        id  
         name
         email
         avatar
@@ -280,6 +278,7 @@ export default new Vuex.Store({
         company
       }
     }`
+        console.log('getting user')
         let token = localStorage.getItem(TOKEN)
         let serverUrl = localStorage.getItem('serverUrl')
 
@@ -295,7 +294,6 @@ export default new Vuex.Store({
         })
         let data = (await response.json()).data
         if (data.user) {
-          localStorage.setItem('suuid', data.user.suuid)
           localStorage.setItem('uuid', data.user.id)
           context.commit('SET_USER', data.user)
           context.commit('SET_SERVER', data.serverInfo)

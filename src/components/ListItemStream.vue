@@ -109,9 +109,6 @@ export default {
   },
   methods: {
     addStream() {
-      this.$matomo && this.$matomo.setCustomUrl(`http://connectors/Excel/stream/add`)
-      this.$matomo && this.$matomo.trackPageView(`stream/add`)
-
       this.$mixpanel.track('Connector Action', { name: 'Stream Add' })
 
       this.$store.dispatch('addStream', {
