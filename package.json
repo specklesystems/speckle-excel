@@ -12,9 +12,6 @@
     "stop": "office-addin-debugging stop public/manifest.xml",
     "validate": "office-toolbox validate -m public/manifest.xml"
   },
-  "resolutions": {
-    "custom-functions-metadata": "1.0.41"
-  },
   "dependencies": {
     "@speckle/objectloader": "^2.3.0",
     "core-js": "^3.6.5",
@@ -33,21 +30,17 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.14.3",
-    "@babel/polyfill": "^7.10.1",
     "@vue/cli-plugin-babel": "~4.5.13",
     "@vue/cli-plugin-eslint": "~4.5.13",
     "@vue/cli-plugin-router": "^4.5.13",
     "@vue/cli-plugin-vuex": "^4.5.13",
     "@vue/cli-service": "~4.5.13",
-    "custom-functions-metadata-plugin": "1.0.41",
-    "custom-functions-metadata": "1.0.41",
     "eslint": "^7.27.0",
     "eslint-config-prettier": "^6.15.0",
     "eslint-loader": "^4.0.2",
     "eslint-plugin-prettier": "^3.2.0",
     "eslint-plugin-vue": "^7.2.0",
     "graphql-tag": "^2.9.0",
-    "html-webpack-plugin": "^4.3.0",
     "office-addin-cli": "^1.0.17",
     "office-addin-debugging": "^4.0.3",
     "office-addin-dev-certs": "^1.5.18",
@@ -55,7 +48,6 @@
     "prettier": "^2.2.1",
     "sass": "^1.32.0",
     "sass-loader": "^10.0.0",
-    "typescript": "^3.9.5",
     "vue-cli-plugin-apollo": "~0.22.2",
     "vue-cli-plugin-vuetify": "~2.4.0",
     "vue-template-compiler": "^2.6.11",
