@@ -1,6 +1,7 @@
 /* eslint-disable no-unreachable */
 import flatten from 'flat'
 import store from '../store/index.js'
+import { MD5, enc } from 'crypto-js'
 
 const unflatten = require('flat').unflatten
 
@@ -312,6 +313,8 @@ export async function send(savedStream, streamId, branchName, message) {
             let propValue = values[row][col]
             object[propName] = propValue
           }
+          // generate a hash if none is present
+          object.id = object.id || MD5(JSON.stringify(object)).toString(enc.Hex)
           let unlattened = unflatten(object)
           data.push(unlattened)
         }
