@@ -10,8 +10,5 @@ module.exports = {
       'Access-Control-Allow-Origin': '*'
     }
   },
-  transpileDependencies: ['vuetify', '@speckle/objectloader', 'flatted', 'vuex-persist'],
-  configureWebpack: (config) => {
-    config.devtool = 'source-map'
-  }
+  transpileDependencies: ['vuetify', '@speckle/objectloader', 'flatted', 'vuex-persist']
 }
