@@ -125,6 +125,7 @@ export default new Vuex.Store({
       localStorage.setItem('serverUrl', serverUrl)
 
       // Send user to auth page
+      console.log(window.Office, window.Office.type)
       await window.Office.context.ui.displayDialogAsync(
         `${window.location.origin}/redirect?challenge=${challenge}&serverUrl=${encodeURIComponent(
           serverUrl

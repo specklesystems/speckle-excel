@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@speckle/objectloader": "^2.9.0",
+    "@speckle/viewer": "^2.11.4",
     "core-js": "^3.6.5",
     "crypto-js": "^4.1.1",
     "flat": "^5.0.2",

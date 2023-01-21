@@ -266,6 +266,22 @@
           ></v-text-field>
         </v-col>
       </v-row>
+      <div id="viewer" style="height: 200px"></div>
+      <v-row>
+        <v-col class="align-self-center d-inline-flex">
+          <v-btn color="primary" small class="mt-1" @click="initViewer">
+            <v-img class="mr-2" width="30" height="30" src="../assets/SenderWhite@32.png" />
+
+            Send
+          </v-btn>
+
+          <v-text-field
+            v-model="message"
+            class="pt-0 mt-0 ml-3 caption"
+            placeholder="Data from Excel"
+          ></v-text-field>
+        </v-col>
+      </v-row>
     </v-card>
   </div>
 </template>
@@ -274,8 +290,10 @@ import streamQuery from '../graphql/stream.gql'
 import { send, receiveLatest } from '../plugins/excel'
 import gql from 'graphql-tag'
 import { createClient } from '../vue-apollo'
+import { Viewer } from '@speckle/viewer'
 
 let ac = new AbortController()
+// let viewer = new Viewer()
 
 export default {
   props: {
@@ -444,6 +462,18 @@ export default {
     }
   },
   methods: {
+    async initViewer() {
+      console.log('initViewer')
+      var container = document.getElementById('viewer')
+      var viewer = new Viewer(container)
+      await viewer.init()
+
+      viewer.loadObject(
+        'https://latest.speckle.dev/streams/96765a5c41/objects/b5fd92623334e74a1fa2230b065ffe4d'
+      )
+      console.log('loaded')
+      // this.viewer = viewer
+    },
     swapReceiver() {
       let s = { ...this.savedStream }
       s.isReceiver = !s.isReceiver
