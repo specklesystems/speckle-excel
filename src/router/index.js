@@ -30,6 +30,11 @@ const routes = [
     component: () => import('../views/Login.vue')
   },
   {
+    path: '/singleStream',
+    name: 'singleStream',
+    component: () => import('../views/SingleStream.vue')
+  },
+  {
     path: '/redirect',
     name: 'redirect'
   },

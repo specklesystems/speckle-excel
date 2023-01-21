@@ -121,6 +121,11 @@ export default {
         to: '/'
       },
       {
+        name: 'SingleStreamDev',
+        icon: '📃',
+        to: '/singleStream'
+      },
+      {
         name: 'Log out',
         icon: '🏃‍♂️',
         to: '/logout'

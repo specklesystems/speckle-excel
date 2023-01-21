@@ -101,10 +101,12 @@ const vuexExcel = new VuexPersistence({
 export default new Vuex.Store({
   state: {
     snackbar: {}
+    // currentStreamId: ''
   },
   plugins: [vuexLocal.plugin, vuexExcel.plugin],
   getters: {
     serverUrl: () => localStorage.getItem('serverUrl')
+    // streamId: () => this.currentStreamId
   },
   mutations: {
     SET_SNACKBAR(state, value) {
@@ -125,7 +127,6 @@ export default new Vuex.Store({
       localStorage.setItem('serverUrl', serverUrl)
 
       // Send user to auth page
-      console.log(window.Office, window.Office.type)
       await window.Office.context.ui.displayDialogAsync(
         `${window.location.origin}/redirect?challenge=${challenge}&serverUrl=${encodeURIComponent(
           serverUrl
