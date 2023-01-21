@@ -11,8 +11,11 @@
             "useWebView": true,
             "port": 9229,
             "timeout": 600000,
-            "webRoot": "${workspaceRoot}",
+            "webRoot": "${workspaceFolder}/src",
             "preLaunchTask": "npm: excel",
+            "sourceMapPathOverrides": {
+                "webpack:///src/*": "${webRoot}/*",
+            }
         }
     ]
 }
