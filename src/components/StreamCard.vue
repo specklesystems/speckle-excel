@@ -360,7 +360,8 @@ export default {
       error: null,
       progress: false,
       message: '',
-      viewer: null
+      viewer: null,
+      objectIds: null
     }
   },
   apollo: {
@@ -509,16 +510,25 @@ export default {
 
         return commit
       },
-      set(value) {
+      async set(value) {
         let s = { ...this.savedStream }
         const index = this.selectedBranch.commits.items.findIndex((x) => x.id === value.id)
         s.selectedCommitId = index === 0 ? 'latest' : value.id
 
-        this.initViewer()
-        this.viewer?.unloadAll()
-        this.viewer?.loadObject(
+        await this.initViewer()
+        await this.viewer?.unloadAll()
+        await this.viewer?.loadObject(
           `${this.serverUrl}/streams/${this.stream.id}/objects/${this.selectedBranch.commits.items[index].referencedObject}`
         )
+
+        var iterator = Object.values(this.viewer.loaders).at(0).loader.getObjectIterator()
+        console.log('it', iterator)
+        this.objectIds = new Set()
+        for await (const obj of iterator) {
+          this.objectIds.add(obj.id)
+          // console.log(obj)
+        }
+        console.log('objectIds', this.objectIds)
 
         this.$store.dispatch('updateStream', s)
       }
@@ -536,7 +546,7 @@ export default {
       var v = new Viewer(container)
       await v.init()
 
-      // highlight selected objects
+      // highlight selected objects in sheet
       v.on(ViewerEvent.ObjectClicked, async (data) => {
         console.log(data?.hits[0]?.object.id)
         var speckleId = data?.hits[0]?.object.id
@@ -545,7 +555,6 @@ export default {
           v.selectObjects(new Array(data?.hits[0]?.object.id))
           await window.Excel.run(async (context) => {
             var sheet = context.workbook.worksheets.getActiveWorksheet()
-            sheet.onSelectionChanged.add(this.checkModelForSelection)
             var range = sheet.getRange()
             var found = range.findOrNullObject(speckleId, {
               completeMatch: true, // Match the whole cell value.
@@ -566,14 +575,49 @@ export default {
         }
       })
 
+      // highlight selected objects in viewer
+      await window.Excel.run(async (context) => {
+        var sheet = context.workbook.worksheets.getActiveWorksheet()
+        sheet.onSelectionChanged.add(this.checkModelForSelection)
+      })
+
       // v.loadObject(
       //   'https://latest.speckle.dev/streams/96765a5c41/objects/b5fd92623334e74a1fa2230b065ffe4d'
       // )
       // console.log('loaded')
       this.viewer = v
     },
-    checkModelForSelection(args) {
+    async checkModelForSelection(args) {
       console.log('shut up, prettier', args)
+      await window.Excel.run(async (context) => {
+        // Get the selected range.
+        let range = context.workbook.getSelectedRange()
+
+        // Specify the direction with the `KeyboardDirection` enum.
+        // let direction = window.Excel.KeyboardDirection.left
+
+        // Get the active cell in the workbook.
+        let activeCell = context.workbook.getActiveCell()
+
+        // Get the top-most cell of the current used range.
+        // This method acts like the Ctrl+Up arrow key keyboard shortcut while a range is selected.
+        let extendedRange = range.getExtendedRange(window.Excel.KeyboardDirection.left, activeCell)
+        extendedRange.load('formulas')
+        // rangeEdge.format.fill.color = 'yellow'
+        await context.sync()
+
+        var idsInViewer = new Array()
+        for (let i = 0; i < extendedRange.formulas.length; i++) {
+          for (let j = 0; j < extendedRange.formulas[i].length; j++) {
+            if (this.objectIds.has(extendedRange.formulas[i][j]))
+              idsInViewer.push(extendedRange.formulas[i][j])
+          }
+        }
+
+        if (idsInViewer.length > 0) this.viewer.selectObjects(idsInViewer)
+
+        // console.log(JSON.stringify(extendedRange.formulas, null))
+      })
     },
     swapReceiver() {
       let s = { ...this.savedStream }
