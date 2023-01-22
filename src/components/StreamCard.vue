@@ -343,7 +343,7 @@ import streamQuery from '../graphql/stream.gql'
 import { send, receiveLatest } from '../plugins/excel'
 import gql from 'graphql-tag'
 import { createClient } from '../vue-apollo'
-import { Viewer } from '@speckle/viewer'
+import { Viewer, ViewerEvent } from '@speckle/viewer'
 
 let ac = new AbortController()
 // let viewer = new Viewer()
@@ -536,11 +536,44 @@ export default {
       var v = new Viewer(container)
       await v.init()
 
+      // highlight selected objects
+      v.on(ViewerEvent.ObjectClicked, async (data) => {
+        console.log(data?.hits[0]?.object.id)
+        var speckleId = data?.hits[0]?.object.id
+        if (speckleId == undefined) v.resetSelection()
+        else {
+          v.selectObjects(new Array(data?.hits[0]?.object.id))
+          await window.Excel.run(async (context) => {
+            var sheet = context.workbook.worksheets.getActiveWorksheet()
+            sheet.onSelectionChanged.add(this.checkModelForSelection)
+            var range = sheet.getRange()
+            var found = range.findOrNullObject(speckleId, {
+              completeMatch: true, // Match the whole cell value.
+              matchCase: false, // Don't match case.
+              searchDirection: window.Excel.SearchDirection.forward // Start search at the beginning of the range.
+            })
+
+            found.load('address')
+            // Update the fill color
+            if (found) {
+              // var extendedRange = found.get
+              found.getExtendedRange(window.Excel.KeyboardDirection.right, found).select()
+            }
+            await context.sync()
+
+            console.log(found?.address)
+          })
+        }
+      })
+
       // v.loadObject(
       //   'https://latest.speckle.dev/streams/96765a5c41/objects/b5fd92623334e74a1fa2230b065ffe4d'
       // )
       // console.log('loaded')
       this.viewer = v
+    },
+    checkModelForSelection(args) {
+      console.log('shut up, prettier', args)
     },
     swapReceiver() {
       let s = { ...this.savedStream }
