@@ -1,5 +1,5 @@
 <template>
-  <v-card class="pa-5 mb-3" style="transition: all 0.2s" @click="addStream">
+  <v-card class="pa-5 mb-3" style="transition: all 0.2s" @click="openStream">
     <v-row>
       <v-col cols="12" sm="8" class="align-self-center">
         <div class="subtitle-1">
@@ -120,6 +120,10 @@ export default {
         selectedCommitId: null
       })
       this.$router.push('/')
+    },
+    openStream() {
+      this.$store.currentStream = this.stream
+      this.$router.push(`/streams/${this.stream.id}`)
     }
   }
 }

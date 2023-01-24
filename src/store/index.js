@@ -100,8 +100,8 @@ const vuexExcel = new VuexPersistence({
 
 export default new Vuex.Store({
   state: {
-    snackbar: {}
-    // currentStreamId: ''
+    snackbar: {},
+    currentStream: {}
   },
   plugins: [vuexLocal.plugin, vuexExcel.plugin],
   getters: {
