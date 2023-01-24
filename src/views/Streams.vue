@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-row align="center">
+    <!-- <v-row align="center">
       <v-col cols="12" align="center" class="mt-5">
         <span v-if="streams && streams.length > 0" class="subtitle">
           You have {{ streams.length }} stream{{ streams.length === 1 ? '' : 's' }}
@@ -12,7 +12,7 @@
           <v-btn large class="mt-5" color="primary" to="add">Add a stream</v-btn>
         </div>
       </v-col>
-    </v-row>
+    </v-row> -->
 
     <v-row>
       <v-col cols="12">

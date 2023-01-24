@@ -5,9 +5,9 @@ import { MD5, enc } from 'crypto-js'
 
 const unflatten = require('flat').unflatten
 
-let ignoreEndsWithProps = ['id', 'totalChildrenCount']
+let ignoreEndsWithProps = ['totalChildrenCount']
 
-let streamId, sheet, rowStart, colStart, arrayData, isTabularData
+let streamId, sheet, rowStart, colStart, arrayData, isTabularData, arrayIdData
 let headerIndices = []
 
 async function flattenData(item, signal) {
@@ -45,18 +45,30 @@ async function flattenSingle(item, signal) {
 
   let flat = flatten(item)
   let rowData = []
+  let rowIdData = []
   for (const [key, value] of Object.entries(flat)) {
     if (key === null || value === null) continue
     if (ignoreEndsWithProps.findIndex((x) => key.endsWith(x)) !== -1) continue
-
-    let colIndex = arrayData[0].findIndex((x) => x === key)
-    if (colIndex === -1) {
-      colIndex = arrayData[0].length
-      arrayData[0].push(key)
+    // TODO: only capturing the first id to map objects between the viewer and the sheet.
+    // there are probably many cases where this wouldn't be sufficient
+    if (key == 'id') {
+      let colIndex = arrayIdData[0].findIndex((x) => x === key)
+      if (colIndex === -1) {
+        colIndex = arrayIdData[0].length
+        arrayIdData[0].push(key)
+      }
+      rowIdData[colIndex] = value
+    } else {
+      let colIndex = arrayData[0].findIndex((x) => x === key)
+      if (colIndex === -1) {
+        colIndex = arrayData[0].length
+        arrayData[0].push(key)
+      }
+      rowData[colIndex] = value
     }
-    rowData[colIndex] = value
   }
   arrayData.push(rowData)
+  arrayIdData.push(rowIdData)
 }
 
 //called if the received data does not contain objects => it's a table, a list or a single value
@@ -100,6 +112,38 @@ async function bakeArray(data, context) {
       rowIndex++
     }
   }
+}
+
+async function addIdDataToObjectData() {
+  if (arrayData.length != arrayIdData.length) {
+    console.log('Could not attach object ids to table')
+    return
+  }
+
+  var previousLastIndex = arrayData[0].length - 1
+  for (let i = 0; i < arrayIdData.length; i++) {
+    arrayData[i].push(...arrayIdData[i])
+  }
+  for (let i = 0; i < arrayIdData[0].length; i++) {
+    headerIndices.push(previousLastIndex + 1 + i)
+  }
+
+  // await window.Excel.run(async (context) => {
+  //   console.log('names')
+  //   const names = context.workbook.names
+  //   console.log('names', names)
+  //   const range = names.getItem('rrr').getRange()
+  //   range.load('address')
+  //   names.load('items')
+  //   await context.sync()
+
+  //   console.log('names', names.items)
+  //   console.log(range.address)
+  //   console.log('myNamedItem', range)
+  // })
+  // for (var header in arrayData[0]) {
+  //   console.log('header', header)
+  // }
 }
 
 function headerListToTree(headers) {
@@ -209,6 +253,7 @@ export async function bake(
 
       streamId = _streamId
       arrayData = [[]]
+      arrayIdData = [[]]
       headerIndices = []
 
       //if the incoming data has objects we need to flatten them to an array
@@ -258,6 +303,7 @@ export async function bake(
 
       if (signal.aborted) return
 
+      addIdDataToObjectData()
       await bakeArray(arrayData, context)
       await context.sync()
 

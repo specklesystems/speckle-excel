@@ -525,8 +525,9 @@ export default {
         console.log('it', iterator)
         this.objectIds = new Set()
         for await (const obj of iterator) {
-          this.objectIds.add(obj.id)
-          // console.log(obj)
+          // TODO: not all visible objects have the displayValue prop (example lines)
+          if (obj.hasOwnProperty('displayValue') && obj.displayValue !== null)
+            this.objectIds.add(obj.id)
         }
         console.log('objectIds', this.objectIds)
 
@@ -566,7 +567,7 @@ export default {
             // Update the fill color
             if (found) {
               // var extendedRange = found.get
-              found.getExtendedRange(window.Excel.KeyboardDirection.right, found).select()
+              found.getExtendedRange(window.Excel.KeyboardDirection.left, found).select()
             }
             await context.sync()
 
@@ -581,6 +582,18 @@ export default {
         sheet.onSelectionChanged.add(this.checkModelForSelection)
       })
 
+      // v.setLightConfiguration({
+      //   enabled: true,
+      //   castShadow: true,
+      //   intensity: 5,
+      //   color: 0xffffff,
+      //   elevation: 1.33,
+      //   azimuth: 0.75,
+      //   radius: 0,
+      //   indirectLightIntensity: 3,
+      //   shadowcatcher: true
+      // })
+
       // v.loadObject(
       //   'https://latest.speckle.dev/streams/96765a5c41/objects/b5fd92623334e74a1fa2230b065ffe4d'
       // )
@@ -590,6 +603,28 @@ export default {
     async checkModelForSelection(args) {
       console.log('shut up, prettier', args)
       await window.Excel.run(async (context) => {
+        // const names = context.workbook.names
+        // names.load('items')
+        // await context.sync()
+
+        // console.log('names', names.items)
+        // // Get the selected range.
+        // let range = context.workbook.getSelectedRange()
+
+        // for (var name in names.items) {
+        //   var rangeName = names.items[name].name
+        //   // if the range doesn't start with the rangeNamePrefix "speckle_", then it is user defined
+        //   if (!rangeName.startsWith(this.$store.getters.rangeNamePrefix)) continue
+
+        //   var rangeInWorkbook = names.getItem(names.items[name].name).getRange()
+        //   var intersectionRange = range.getIntersectionOrNullObject(rangeInWorkbook)
+        //   intersectionRange.load('address')
+        //   await context.sync()
+        //   console.log('arange', intersectionRange.address)
+        //   // if (range.getIntersectionOrNullObject(namedRange) != null) console.log(namedRange)
+        //   // else console.log('null')
+        // }
+        // console.log('names', names.items)
         // Get the selected range.
         let range = context.workbook.getSelectedRange()
 
@@ -601,7 +636,7 @@ export default {
 
         // Get the top-most cell of the current used range.
         // This method acts like the Ctrl+Up arrow key keyboard shortcut while a range is selected.
-        let extendedRange = range.getExtendedRange(window.Excel.KeyboardDirection.left, activeCell)
+        let extendedRange = range.getExtendedRange(window.Excel.KeyboardDirection.right, activeCell)
         extendedRange.load('formulas')
         // rangeEdge.format.fill.color = 'yellow'
         await context.sync()
@@ -614,7 +649,10 @@ export default {
           }
         }
 
-        if (idsInViewer.length > 0) this.viewer.selectObjects(idsInViewer)
+        if (idsInViewer.length > 0) {
+          this.viewer?.selectObjects(idsInViewer)
+          this.viewer?.zoom(idsInViewer)
+        }
 
         // console.log(JSON.stringify(extendedRange.formulas, null))
       })
