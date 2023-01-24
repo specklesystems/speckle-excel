@@ -15,6 +15,8 @@
             "preLaunchTask": "npm: excel",
             "sourceMapPathOverrides": {
                 "webpack:///src/*": "${webRoot}/*",
+                "webpack:///src/*.vue": "${webRoot}/*.vue",
+                "webpack:///./src/*.js": "${webRoot}/*.js",
             }
         }
     ]
