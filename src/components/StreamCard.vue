@@ -40,7 +40,7 @@
       <v-skeleton-loader type="article"></v-skeleton-loader>
     </div>
     <div v-else-if="stream">
-      <div id="viewer"></div>
+      <div id="viewer" class="background-light"></div>
       <!-- <v-card id="viewer">
         <v-row>
           <v-col class="align-self-center">
@@ -346,7 +346,6 @@ import { createClient } from '../vue-apollo'
 import { Viewer, ViewerEvent } from '@speckle/viewer'
 
 let ac = new AbortController()
-// let viewer = new Viewer()
 
 export default {
   props: {
@@ -741,5 +740,16 @@ export default {
 #viewer {
   height: 50vw;
   padding-bottom: 10px;
+}
+.background-light {
+  background: #8e9eab;
+  background: -webkit-linear-gradient(to top right, #eeeeee, #c8e8ff) !important;
+  background: linear-gradient(to top right, #ffffff, #c8e8ff) !important;
+}
+
+.background-dark {
+  background: #141e30;
+  background: -webkit-linear-gradient(to top left, #243b55, #141e30) !important;
+  background: linear-gradient(to top left, #243b55, #141e30) !important;
 }
 </style>
