@@ -1,7 +1,7 @@
 <template>
   <v-container fluid class="px-1 pb-0 pt-1">
     <v-row>
-      <v-col>
+      <v-col class="center-content">
         <!-- DIALOG: Create New Stream -->
         <v-dialog v-model="showCreateNewStream">
           <template #activator="{ on, attrs }">
@@ -304,6 +304,10 @@ export default {
 </script>
 
 <style>
+.center-content {
+  display: flex;
+  justify-content: center;
+}
 .v-dialog {
   max-width: 390px;
 }

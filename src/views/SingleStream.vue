@@ -35,11 +35,11 @@
       Stream Id: {{ savedStream.id }}
     </v-card-text>
   </v-card>
-  <div v-else-if="$apollo.queries.stream.loading" class="mx-0 mb-3">
-    <v-skeleton-loader type="article"></v-skeleton-loader>
+  <div v-else-if="$apollo.queries.stream.loading" class="mx-0 mb-3 background-light">
+    <!-- <v-progress-circular indeterminate></v-progress-circular> -->
   </div>
-  <div v-else-if="stream" id="viewer-parent">
-    <div id="viewer" class="background-light"></div>
+  <div v-else-if="stream" id="viewer-parent" class="background-light">
+    <div id="viewer"></div>
     <v-card id="stream-info" class="pa-5 ma-3" style="transition: all 0.2s">
       <v-row>
         <v-col class="align-self-center">
@@ -48,15 +48,6 @@
           </div>
 
           <div class="floating">
-            <v-btn
-              v-tooltip="`Remove this stream from the document`"
-              small
-              icon
-              color="red"
-              @click="remove"
-            >
-              <v-icon small>mdi-minus-circle-outline</v-icon>
-            </v-btn>
             <v-btn
               v-tooltip="`Open this stream in a new window`"
               small
@@ -477,14 +468,12 @@ export default {
         )
 
         var iterator = Object.values(this.viewer.loaders).at(0).loader.getObjectIterator()
-        console.log('it', iterator)
         this.objectIds = new Set()
         for await (const obj of iterator) {
           // TODO: not all visible objects have the displayValue prop (example lines)
           if (obj.hasOwnProperty('displayValue') && obj.displayValue !== null)
             this.objectIds.add(obj.id)
         }
-        console.log('objectIds', this.objectIds)
 
         this.$store.dispatch('updateStream', s)
       }

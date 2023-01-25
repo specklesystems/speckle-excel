@@ -2,7 +2,7 @@
   <v-container>
     <v-row>
       <v-col class="py-2">
-        <v-btn text large color="primary" to="/">
+        <v-btn text large color="primary" :to="`/streams/${streamId}`">
           <v-icon dark>mdi-chevron-left</v-icon>
           back
         </v-btn>
@@ -90,6 +90,9 @@ export default {
         speckle_type: 'reference',
         referencedId: this.stream.commit.referencedObject
       }
+    },
+    streamId() {
+      return this.$route.params.streamId
     }
   }
 }

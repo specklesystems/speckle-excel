@@ -2,11 +2,8 @@
   <v-container>
     <v-row align="center">
       <v-col cols="12" align="center" class="mt-5">
-        <p v-if="filteredStreams && filteredStreams.length > 0" class="subtitle">
-          Click on a stream to add it to this document. 👇
-        </p>
-        <p v-else-if="search" class="subtitle">No streams found 🧐</p>
-        <div v-else-if="!$apollo.loading">
+        <p v-if="search" class="subtitle">No streams found 🧐</p>
+        <div v-else-if="!$apollo.loading && filteredStreams && filteredStreams.length == 0">
           <p class="subtitle">
             You don't have any streams 😟,
             <a :href="serverUrl" target="_blank">visit Speckle web to create one</a>
