@@ -40,50 +40,6 @@
   </div>
   <div v-else-if="stream" id="viewer-parent">
     <div id="viewer" class="background-light"></div>
-    <!-- <v-card id="viewer">
-      <v-row>
-        <v-col class="align-self-center">
-          <div class="subtitle-1">
-            {{ stream.name }}
-          </div>
-
-          <div class="floating">
-            <v-btn
-              v-tooltip="`Remove this stream from the document`"
-              small
-              icon
-              color="red"
-              @click="remove"
-            >
-              <v-icon small>mdi-minus-circle-outline</v-icon>
-            </v-btn>
-            <v-btn
-              v-tooltip="`Open this stream in a new window`"
-              small
-              icon
-              color="primary"
-              :href="`${serverUrl}/streams/${stream.id}/branches/${selectedBranch.name}`"
-              target="_blank"
-            >
-              <v-icon small>mdi-open-in-new</v-icon>
-            </v-btn>
-
-            <v-btn
-              v-if="stream.role != 'stream:reviewer'"
-              v-tooltip="
-                `Click to make this a ` + (isReceiver ? `sender` : `receiver`)
-              "
-              small
-              icon
-              color="primary"
-              @click="swapReceiver"
-            >
-              <v-icon small>mdi-swap-horizontal</v-icon>
-            </v-btn>
-          </div>
-        </v-col>
-      </v-row>
-    </v-card> -->
     <v-card id="stream-info" class="pa-5 ma-3" style="transition: all 0.2s">
       <v-row>
         <v-col class="align-self-center">
@@ -545,7 +501,7 @@ export default {
       if (this.viewer) {
         return
       }
-      var container = await document.getElementById('viewer')
+      var container = document.getElementById('viewer')
       var v = new Viewer(container)
       await v.init()
 
@@ -605,33 +561,8 @@ export default {
     async checkModelForSelection(args) {
       console.log('shut up, prettier', args)
       await window.Excel.run(async (context) => {
-        // const names = context.workbook.names
-        // names.load('items')
-        // await context.sync()
-
-        // console.log('names', names.items)
-        // // Get the selected range.
-        // let range = context.workbook.getSelectedRange()
-
-        // for (var name in names.items) {
-        //   var rangeName = names.items[name].name
-        //   // if the range doesn't start with the rangeNamePrefix "speckle_", then it is user defined
-        //   if (!rangeName.startsWith(this.$store.getters.rangeNamePrefix)) continue
-
-        //   var rangeInWorkbook = names.getItem(names.items[name].name).getRange()
-        //   var intersectionRange = range.getIntersectionOrNullObject(rangeInWorkbook)
-        //   intersectionRange.load('address')
-        //   await context.sync()
-        //   console.log('arange', intersectionRange.address)
-        //   // if (range.getIntersectionOrNullObject(namedRange) != null) console.log(namedRange)
-        //   // else console.log('null')
-        // }
-        // console.log('names', names.items)
         // Get the selected range.
         let range = context.workbook.getSelectedRange()
-
-        // Specify the direction with the `KeyboardDirection` enum.
-        // let direction = window.Excel.KeyboardDirection.left
 
         // Get the active cell in the workbook.
         let activeCell = context.workbook.getActiveCell()
@@ -639,24 +570,21 @@ export default {
         // Get the top-most cell of the current used range.
         // This method acts like the Ctrl+Up arrow key keyboard shortcut while a range is selected.
         let extendedRange = range.getExtendedRange(window.Excel.KeyboardDirection.right, activeCell)
-        extendedRange.load('formulas')
-        // rangeEdge.format.fill.color = 'yellow'
+        extendedRange.load('text')
         await context.sync()
 
         var idsInViewer = new Array()
-        for (let i = 0; i < extendedRange.formulas.length; i++) {
-          for (let j = 0; j < extendedRange.formulas[i].length; j++) {
-            if (this.objectIds.has(extendedRange.formulas[i][j]))
-              idsInViewer.push(extendedRange.formulas[i][j])
+        for (let i = 0; i < extendedRange.text.length; i++) {
+          for (let j = 0; j < extendedRange.text[i].length; j++) {
+            if (this.objectIds.has(extendedRange.text[i][j]))
+              idsInViewer.push(extendedRange.text[i][j])
           }
         }
 
         if (idsInViewer.length > 0) {
-          this.viewer?.selectObjects(idsInViewer)
-          this.viewer?.zoom(idsInViewer)
+          this.viewer?.isolateObjects(idsInViewer)
+          // this.viewer?.zoom(idsInViewer)
         }
-
-        // console.log(JSON.stringify(extendedRange.formulas, null))
       })
     },
     swapReceiver() {
