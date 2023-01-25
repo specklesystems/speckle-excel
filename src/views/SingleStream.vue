@@ -312,7 +312,8 @@ export default {
       viewer: null,
       objectIds: null,
       selectedObjectIds: null,
-      isReceiver: true
+      isReceiver: true,
+      filterViewer: true
     }
   },
   apollo: {
@@ -526,6 +527,7 @@ export default {
             // Update the fill color
             if (found) {
               // var extendedRange = found.get
+              this.filterViewer = false
               found.getExtendedRange(window.Excel.KeyboardDirection.left, found).select()
             }
             await context.sync()
@@ -560,6 +562,10 @@ export default {
       this.viewer = v
     },
     async checkModelForSelection(args) {
+      if (!this.filterViewer) {
+        this.filterViewer = true
+        return
+      }
       console.log('shut up, prettier', args)
       await window.Excel.run(async (context) => {
         // Get the selected range.
@@ -572,10 +578,12 @@ export default {
         // This method acts like the Ctrl+Up arrow key keyboard shortcut while a range is selected.
         let extendedRange = range.getExtendedRange(window.Excel.KeyboardDirection.right, activeCell)
         extendedRange.load('text')
+        range.load('text')
         await context.sync()
 
+        if (extendedRange.text == null) extendedRange = range
         var idsInViewer = new Array()
-        for (let i = 0; i < extendedRange.text.length; i++) {
+        for (let i = 0; i < extendedRange.text?.length; i++) {
           for (let j = 0; j < extendedRange.text[i].length; j++) {
             if (this.objectIds.has(extendedRange.text[i][j]))
               idsInViewer.push(extendedRange.text[i][j])
@@ -584,6 +592,7 @@ export default {
 
         // unisolate previous objects
         if (this.selectedObjectIds?.length > 0) {
+          this.viewer?.resetFilters()
           this.viewer?.unIsolateObjects(this.selectedObjectIds)
           this.selectedObjectIds = null
         }
