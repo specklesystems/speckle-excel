@@ -737,10 +737,6 @@ export default {
   right: 0;
   margin: 10px;
 }
-#viewer {
-  height: 50vw;
-  padding-bottom: 10px;
-}
 .background-light {
   background: #8e9eab;
   background: -webkit-linear-gradient(to top right, #eeeeee, #c8e8ff) !important;

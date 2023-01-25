@@ -30,7 +30,8 @@ const routes = [
     meta: {
       title: 'Stream | Speckle'
     },
-    component: () => import('../views/SingleStream.vue')
+    component: () => import('../views/SingleStream.vue'),
+    props: true
   },
   {
     path: '/login',
