@@ -311,6 +311,7 @@ export default {
       message: '',
       viewer: null,
       objectIds: null,
+      selectedObjectIds: null,
       isReceiver: true
     }
   },
@@ -509,7 +510,7 @@ export default {
       v.on(ViewerEvent.ObjectClicked, async (data) => {
         console.log(data?.hits[0]?.object.id)
         var speckleId = data?.hits[0]?.object.id
-        if (speckleId == undefined) v.resetSelection()
+        if (speckleId == undefined) v.resetFilters()
         else {
           v.selectObjects(new Array(data?.hits[0]?.object.id))
           await window.Excel.run(async (context) => {
@@ -540,17 +541,17 @@ export default {
         sheet.onSelectionChanged.add(this.checkModelForSelection)
       })
 
-      // v.setLightConfiguration({
-      //   enabled: true,
-      //   castShadow: true,
-      //   intensity: 5,
-      //   color: 0xffffff,
-      //   elevation: 1.33,
-      //   azimuth: 0.75,
-      //   radius: 0,
-      //   indirectLightIntensity: 3,
-      //   shadowcatcher: true
-      // })
+      v.setLightConfiguration({
+        enabled: true,
+        castShadow: true,
+        intensity: 5,
+        color: 0xffffff,
+        elevation: 1.33,
+        azimuth: 0.75,
+        radius: 0,
+        indirectLightIntensity: 3,
+        shadowcatcher: true
+      })
 
       // v.loadObject(
       //   'https://latest.speckle.dev/streams/96765a5c41/objects/b5fd92623334e74a1fa2230b065ffe4d'
@@ -581,8 +582,15 @@ export default {
           }
         }
 
+        // unisolate previous objects
+        if (this.selectedObjectIds?.length > 0) {
+          this.viewer?.unIsolateObjects(this.selectedObjectIds)
+          this.selectedObjectIds = null
+        }
+
         if (idsInViewer.length > 0) {
           this.viewer?.isolateObjects(idsInViewer)
+          this.selectedObjectIds = idsInViewer
           // this.viewer?.zoom(idsInViewer)
         }
       })

@@ -30,6 +30,8 @@
       </v-col>
     </v-row>
 
+    <create-stream-dialog :account-id="user.id" :server-url="serverUrl" />
+
     <v-row class="mt-0 pt-0">
       <v-col cols="12" class="mt-0 pt-0">
         <v-card elevation="0" color="transparent">
@@ -62,13 +64,15 @@ import gql from 'graphql-tag'
 import streamsQuery from '../graphql/streams.gql'
 import InfiniteLoading from 'vue-infinite-loading'
 import { createClient } from '../vue-apollo'
+import CreateStreamDialog from '../components/dialogs/CreateStreamDialog.vue'
 
 export default {
   name: 'Add',
 
   components: {
     ListItemStream,
-    InfiniteLoading
+    InfiniteLoading,
+    CreateStreamDialog
   },
   data: () => ({
     streams: [],
@@ -121,12 +125,17 @@ export default {
   },
   computed: {
     isAuthenticated() {
+      console.log(this.user)
       return this.$store.getters.isAuthenticated
+    },
+    user() {
+      return this.$store.state.user.user
     },
     serverUrl() {
       return this.$store.getters.serverUrl
     },
     filteredStreams() {
+      console.log('user', this.$store.state.user.user)
       if (!this.streams.items) return null
       return this.streams.items.filter(
         (x) => this.$store.state.streams.streams.findIndex((y) => y.id === x.id) === -1
