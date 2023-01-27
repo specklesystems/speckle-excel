@@ -13,9 +13,11 @@ let headerIndices = []
 async function flattenData(item, signal) {
   if (signal.aborted) return
   if (Array.isArray(item)) {
-    for (let o of item) {
-      if (signal.aborted) return
-      await flattenSingle(o, signal)
+    let localItems = [...item]
+    const batchSize = 35
+    while (localItems.length > 0) {
+      let batch = localItems.splice(0, batchSize)
+      await Promise.all(batch.map((i) => flattenSingle(i, signal)))
     }
   } else {
     await flattenSingle(item, signal)
