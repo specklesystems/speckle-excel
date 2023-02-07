@@ -351,7 +351,7 @@ export default {
         }
 
         this.$nextTick(function () {
-          this.loadViewerObjectByCommitId(this.selectedCommitId)
+          if (this.isReceiver) this.loadViewerObjectByCommitId(this.selectedCommitId)
         })
       },
       error(error) {
@@ -512,6 +512,7 @@ export default {
       if (this.viewer) {
         return
       }
+
       var container = document.getElementById('viewer')
       var v = new Viewer(container)
       await v.init()
@@ -566,7 +567,6 @@ export default {
       this.viewer = v
     },
     async loadViewerObjectByReferencedId(referencedObject) {
-      console.log('referencedObj', referencedObject)
       if (referencedObject === this.referencedObject) return
       if (this.viewerLoading) {
         await this.viewer?.cancelLoad(
@@ -578,7 +578,6 @@ export default {
       this.referencedObject = referencedObject
       await this.initViewer()
       await this.viewer?.unloadAll()
-
       this.viewerLoading = true
       try {
         await this.viewer?.loadObject(
@@ -589,8 +588,6 @@ export default {
       }
     },
     async loadViewerObjectByCommitId(commitId) {
-      console.log(this.selectedBranch)
-      console.log(this.selectedCommit)
       const index = this.selectedBranch.commits.items.findIndex((x) => x.id === commitId)
 
       await this.loadViewerObjectByReferencedId(
@@ -671,7 +668,12 @@ export default {
       ac.abort()
     },
     async send() {
+      // these values need to be set to null or the models will not load
+      // when switching back to the receive mode
+      this.viewer = null
+      this.referencedObject = null
       this.$store.dispatch('addStream', this.savedStream)
+
       this.$mixpanel.track('Send')
       send(this.savedStream, this.stream.id, this.selectedBranch.name, this.message)
     },
