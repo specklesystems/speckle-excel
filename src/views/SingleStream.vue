@@ -35,10 +35,25 @@
       Stream Id: {{ savedStream.id }}
     </v-card-text>
   </v-card>
-  <div v-else-if="$apollo.queries.stream.loading" class="mx-0 mb-3 background-light">
-    <!-- <v-progress-circular indeterminate></v-progress-circular> -->
+  <div v-else-if="$apollo.queries.stream.loading" class="mx-0 mb-3 fill-height background-light">
+    <div class="progress-parent">
+      <v-progress-circular
+        indeterminate
+        color="primary"
+        :size="150"
+        class="fill-height"
+      ></v-progress-circular>
+    </div>
   </div>
   <div v-else-if="stream" id="viewer-parent" class="background-light">
+    <div v-if="viewerLoading" class="progress-parent">
+      <v-progress-circular
+        indeterminate
+        color="primary"
+        :size="150"
+        class="fill-height"
+      ></v-progress-circular>
+    </div>
     <div id="viewer"></div>
     <div id="stream-info-parent">
       <v-card id="stream-info" class="pa-5 ma-3" style="transition: all 0.2s">
@@ -142,12 +157,8 @@
               </div>
             </div>
             <div v-else class="caption d-inline-flex" style="width: 100%">
-              <span
-                v-if="savedStream.selection"
-                v-tooltip="savedStream.selection"
-                class="mt-2 ml-2 text-truncate"
-              >
-                {{ savedStream.selection }}
+              <span v-if="selection" v-tooltip="selection" class="mt-2 ml-2 text-truncate">
+                {{ selection }}
               </span>
               <span v-else class="mt-2 ml-2">No range set</span>
 
@@ -184,7 +195,7 @@
                       Set range
                     </v-list-item-title>
                   </v-list-item>
-                  <v-list-item v-if="savedStream.selection" @click="clearSelection">
+                  <v-list-item v-if="selection" @click="clearSelection">
                     <v-list-item-title class="caption">Clear</v-list-item-title>
                   </v-list-item>
                 </v-list>
@@ -222,8 +233,8 @@
               </template>
 
               <v-list v-if="selectedCommit" dense>
-                <v-list-item :to="`/streams/${stream.id}/commits/${selectedCommit.id}`">
-                  <!-- <v-list-item @click="filterAndReceive"> -->
+                <!-- <v-list-item :to="`/streams/${stream.id}/commits/${selectedCommit.id}`"> -->
+                <v-list-item @click="filterAndReceive">
                   <v-list-item-action class="mr-2">
                     <v-icon small>mdi-filter-variant</v-icon>
                   </v-list-item-action>
@@ -245,13 +256,7 @@
 
         <v-row v-else>
           <v-col class="align-self-center d-inline-flex">
-            <v-btn
-              color="primary"
-              small
-              :disabled="!savedStream.selection"
-              class="mt-1"
-              @click="send"
-            >
+            <v-btn color="primary" small :disabled="!selection" class="mt-1" @click="send">
               <v-img class="mr-2" width="30" height="30" src="../assets/SenderWhite@32.png" />
 
               Send
@@ -309,8 +314,14 @@ export default {
       viewer: null,
       objectIds: null,
       selectedObjectIds: null,
+      filterViewer: true,
       isReceiver: true,
-      filterViewer: true
+      selection: null,
+      hasHeaders: false,
+      selectedBranchName: null,
+      selectedCommitId: null,
+      viewerLoading: false,
+      referencedObject: null
     }
   },
   apollo: {
@@ -320,8 +331,28 @@ export default {
       fetchPolicy: 'network-only',
       variables() {
         return {
-          id: this.savedStream.id
+          id: this.streamId
         }
+      },
+      result() {
+        const index = this.$store.state.streams.streams.findIndex((x) => x.id === this.streamId)
+        let savedStream = null
+        if (index > -1) {
+          savedStream = this.$store.state.streams.streams[index]
+          this.isReceiver = savedStream.isReceiver
+          this.selection = savedStream.selection
+          this.hasHeaders = savedStream.hasHeaders
+          this.selectedBranchName = savedStream.selectedBranchName
+          this.selectedCommitId = savedStream.selectedCommitId
+        } else {
+          this.isReceiver = true
+          this.selectedBranchName = this.selectedBranch.name
+          this.selectedCommitId = this.selectedCommit.id
+        }
+
+        this.$nextTick(function () {
+          this.loadViewerObjectByCommitId(this.selectedCommitId)
+        })
       },
       error(error) {
         console.log(this.error)
@@ -329,9 +360,6 @@ export default {
           .replaceAll('"', '')
           .replace('GraphQL error: ', '')
         console.log(this.error)
-      },
-      skip() {
-        return this.savedStream === null
       }
     },
     $client: createClient(),
@@ -343,7 +371,7 @@ export default {
           }
         `,
         variables() {
-          return { id: this.savedStream.id }
+          return { id: this.streamId }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -356,7 +384,7 @@ export default {
           }
         `,
         variables() {
-          return { streamId: this.savedStream.id }
+          return { streamId: this.streamId }
         },
         result(commitInfo) {
           this.$apollo.queries.stream.refetch()
@@ -373,7 +401,7 @@ export default {
           }
         `,
         variables() {
-          return { id: this.savedStream.id }
+          return { id: this.streamId }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -386,7 +414,7 @@ export default {
           }
         `,
         variables() {
-          return { id: this.savedStream.id }
+          return { id: this.streamId }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -399,7 +427,7 @@ export default {
           }
         `,
         variables() {
-          return { id: this.savedStream.id }
+          return { id: this.streamId }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -412,7 +440,7 @@ export default {
           }
         `,
         variables() {
-          return { id: this.savedStream.id }
+          return { id: this.streamId }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -425,23 +453,27 @@ export default {
       return this.$store.getters.serverUrl
     },
     savedStream() {
-      return this.$store.currentStream
+      return {
+        id: this.streamId,
+        isReceiver: this.isReceiver,
+        selection: this.selection,
+        hasHeaders: this.hasHeaders,
+        selectedBranchName: this.selectedBranchName,
+        selectedCommitId: this.selectedCommitId
+      }
     },
     selectedBranch: {
       get() {
         if (!this.stream || !this.stream.branches) return null
 
-        let selectedBranchName = this.savedStream.selectedBranchName
-          ? this.savedStream.selectedBranchName
-          : 'main'
+        let selectedBranchName = this.selectedBranchName ? this.selectedBranchName : 'main'
         const index = this.stream.branches.items.findIndex((x) => x.name === selectedBranchName)
         if (index > -1) return this.stream.branches.items[index]
         return this.stream.branches.items[0]
       },
       set(value) {
-        let s = { ...this.savedStream }
-        s.selectedBranchName = value.name
-        this.$store.dispatch('updateStream', s)
+        this.selectedBranchName = value.name
+        this.$store.dispatch('updateStream', this.savedStream)
       }
     },
     selectedCommit: {
@@ -449,50 +481,32 @@ export default {
         if (!this.selectedBranch || !this.selectedBranch.commits) return null
         var commit = null
         //not set or latest, return first
-        if (!this.savedStream.selectedCommitId || this.savedStream.selectedCommitId === 'latest')
+        if (!this.selectedCommitId || this.selectedCommitId === 'latest')
           commit = this.selectedBranch.commits.items[0]
         //try match by id
         else {
           const index = this.selectedBranch.commits.items.findIndex(
-            (x) => x.id === this.savedStream.selectedCommitId
+            (x) => x.id === this.selectedCommitId
           )
           if (index > -1) commit = this.selectedBranch.commits.items[index]
           else commit = this.selectedBranch.commits.items[0]
         }
-
         return commit
       },
-      async set(value) {
-        let s = { ...this.savedStream }
+      set(value) {
         const index = this.selectedBranch.commits.items.findIndex((x) => x.id === value.id)
-        s.selectedCommitId = index === 0 ? 'latest' : value.id
-
-        await this.initViewer()
-        await this.viewer?.unloadAll()
-        await this.viewer?.loadObject(
-          `${this.serverUrl}/streams/${this.stream.id}/objects/${this.selectedBranch.commits.items[index].referencedObject}`
+        this.selectedCommitId = value.id
+        this.loadViewerObjectByReferencedId(
+          this.selectedBranch.commits.items[index].referencedObject
         )
 
-        // var iterator = Object.values(this.viewer.loaders).at(0).loader.getObjectIterator()
-        // this.objectIds = new Set()
-        // for await (const obj of iterator) {
-        //   // TODO: not all visible objects have the displayValue prop (example lines)
-        //   if (obj.hasOwnProperty('displayValue') && obj.displayValue !== null)
-        //     this.objectIds.add(obj.id)
-        // }
-
-        this.$store.dispatch('updateStream', s)
+        this.$store.dispatch('updateStream', this.savedStream)
       }
     }
   },
-  // created() {
-  //   // this.savedStream = this.$store.currentStream
-  //   this.isReceiver = true
-  //   this.savedStream.selection = null
-  //   this.savedStream.hasHeaders = false
-  //   this.savedStream.selectedBranchName = null
-  //   this.savedStream.selectedCommitId = null
-  // },
+  mounted() {
+    console.log('mounted')
+  },
   methods: {
     async initViewer() {
       if (this.viewer) {
@@ -540,21 +554,48 @@ export default {
 
       v.setLightConfiguration({
         enabled: true,
-        castShadow: true,
+        castShadow: false, // there is a bug involving the shadows so turn them off for now
         intensity: 5,
         color: 0xffffff,
         elevation: 1.33,
         azimuth: 0.75,
         radius: 0,
-        indirectLightIntensity: 3,
+        indirectLightIntensity: 1.2,
         shadowcatcher: true
       })
-
-      // v.loadObject(
-      //   'https://latest.speckle.dev/streams/96765a5c41/objects/b5fd92623334e74a1fa2230b065ffe4d'
-      // )
-      // console.log('loaded')
       this.viewer = v
+    },
+    async loadViewerObjectByReferencedId(referencedObject) {
+      console.log('referencedObj', referencedObject)
+      if (referencedObject === this.referencedObject) return
+      if (this.viewerLoading) {
+        await this.viewer?.cancelLoad(
+          `${this.serverUrl}/streams/${this.streamId}/objects/${this.referencedObject}`,
+          true
+        )
+        this.viewerLoading = false
+      }
+      this.referencedObject = referencedObject
+      await this.initViewer()
+      await this.viewer?.unloadAll()
+
+      this.viewerLoading = true
+      try {
+        await this.viewer?.loadObject(
+          `${this.serverUrl}/streams/${this.streamId}/objects/${referencedObject}`
+        )
+      } finally {
+        if (referencedObject == this.referencedObject) this.viewerLoading = false
+      }
+    },
+    async loadViewerObjectByCommitId(commitId) {
+      console.log(this.selectedBranch)
+      console.log(this.selectedCommit)
+      const index = this.selectedBranch.commits.items.findIndex((x) => x.id === commitId)
+
+      await this.loadViewerObjectByReferencedId(
+        this.selectedBranch.commits.items[index].referencedObject
+      )
     },
     async checkModelForSelection(args) {
       if (!this.filterViewer) {
@@ -600,11 +641,9 @@ export default {
     },
     swapReceiver() {
       this.isReceiver = !this.isReceiver
-      // let s = { ...this.savedStream }
-      // if (s.isReceiver != true && s.isReceiver != false) s.isReceiver = true
-      // else s.isReceiver = !s.isReceiver
+      if (this.isReceiver) this.loadViewerObjectByCommitId(this.selectedCommitId)
+      this.$store.dispatch('updateStream', this.savedStream)
       this.$mixpanel.track('Connector Action', { name: 'Stream Swap Receive/Send', type: 'action' })
-      // this.$store.dispatch('updateStream', s)
     },
 
     async setRange(headers) {
@@ -614,26 +653,25 @@ export default {
 
         await context.sync()
 
-        let s = { ...this.savedStream }
-        s.selection = range.address
-        s.hasHeaders = headers
-        this.$store.dispatch('updateStream', s)
+        this.selection = range.address
+        this.hasHeaders = headers
+        this.$store.dispatch('updateStream', this.savedStream)
       })
     },
     clearSelection() {
-      let s = { ...this.savedStream }
-      s.selection = ''
-      this.$store.dispatch('updateStream', s)
+      this.selection = ''
+      this.$store.dispatch('updateStream', this.savedStream)
     },
 
     remove() {
       this.$mixpanel.track('Connector Action', { name: 'Stream Remove' })
-      return this.$store.dispatch('removeStream', this.savedStream.id)
+      return this.$store.dispatch('removeStream', this.streamId)
     },
     cancel() {
       ac.abort()
     },
     async send() {
+      this.$store.dispatch('addStream', this.savedStream)
       this.$mixpanel.track('Send')
       send(this.savedStream, this.stream.id, this.selectedBranch.name, this.message)
     },
@@ -654,34 +692,12 @@ export default {
       )
       this.progress = false
     },
-    // async filterAndReceive() {
-    //   // this.$store.dispatch('login', this.serverUrl)
-    //   await window.Office.context.ui.displayDialogAsync(
-    //     `${window.location.origin}/redirect`,
-    //     {
-    //       height: 80,
-    //       width: 30,
-    //       promptBeforeOpen: false
-    //     },
-    //     (asyncResult) => {
-    //       let dialog = asyncResult.value
-    //       dialog.addEventHandler(window.Office.EventType.DialogMessageReceived, async (args) => {
-    //         // dialog.close()
-    //         console.log(args)
-    //         router.push(
-    //           `${window.location.origin}/streams/${this.stream.id}/commits/${this.selectedCommit.id}`
-    //         )
-    //       })
-    //     }
-    //   )
-    // },
+    async filterAndReceive() {
+      this.$store.dispatch('addStream', this.savedStream)
+      this.$router.push(`/streams/${this.stream.id}/commits/${this.selectedCommit.id}`)
+    },
     formatCommitName(id) {
       if (this.selectedBranch.commits.items[0].id == id) {
-        // this.viewer.unloadAll()
-        // this.viewer.loadObject(
-        //   `${this.serverUrl}/streams/${this.streamId}/objects/${this.selectedCommit.referencedObject}`
-        // )
-        console.log(id)
         return 'latest'
       }
       return id
@@ -745,5 +761,20 @@ export default {
   background: #141e30;
   background: -webkit-linear-gradient(to top left, #243b55, #141e30) !important;
   background: linear-gradient(to top left, #243b55, #141e30) !important;
+}
+
+.progress-parent {
+  height: 100%;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+.v-progress-circular {
+  height: 100%;
+  display: block;
+  margin: auto;
 }
 </style>

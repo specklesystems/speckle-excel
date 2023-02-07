@@ -4,7 +4,8 @@ export default {
   },
   mutations: {
     ADD_STREAM(state, value) {
-      state.streams.unshift(value)
+      const index = state.streams.findIndex((x) => x.id === value.id)
+      if (index == -1) state.streams.unshift(value)
     },
     REMOVE_STREAM(state, value) {
       const index = state.streams.findIndex((x) => x.id === value)

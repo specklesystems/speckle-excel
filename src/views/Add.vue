@@ -134,9 +134,19 @@ export default {
     filteredStreams() {
       console.log('user', this.$store.state.user.user)
       if (!this.streams.items) return null
-      return this.streams.items.filter(
+
+      let savedStreams = this.streams.items.filter(
+        (x) => this.$store.state.streams.streams.findIndex((y) => y.id === x.id) !== -1
+      )
+      let otherStreams = this.streams.items.filter(
         (x) => this.$store.state.streams.streams.findIndex((y) => y.id === x.id) === -1
       )
+
+      savedStreams.push(...otherStreams)
+      return savedStreams
+      // return this.streams.items.filter(
+      //   (x) => this.$store.state.streams.streams.findIndex((y) => y.id === x.id) === -1
+      // )
     }
   },
   mounted() {
