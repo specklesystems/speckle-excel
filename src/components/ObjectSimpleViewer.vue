@@ -81,6 +81,10 @@ export default {
     nearestObjectId: {
       type: String,
       default: null
+    },
+    pathFromNearestObject: {
+      type: String,
+      default: null
     }
   },
   data() {
