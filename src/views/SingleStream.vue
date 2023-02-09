@@ -344,6 +344,7 @@ export default {
           this.hasHeaders = savedStream.hasHeaders
           this.selectedBranchName = savedStream.selectedBranchName
           this.selectedCommitId = savedStream.selectedCommitId
+          this.receiverSelection = savedStream.receiverSelection
         } else {
           this.isReceiver = true
           this.selectedBranchName = this.selectedBranch.name
@@ -459,7 +460,8 @@ export default {
         selection: this.selection,
         hasHeaders: this.hasHeaders,
         selectedBranchName: this.selectedBranchName,
-        selectedCommitId: this.selectedCommitId
+        selectedCommitId: this.selectedCommitId,
+        receiverSelection: this.receiverSelection
       }
     },
     selectedBranch: {
@@ -579,9 +581,13 @@ export default {
       await this.initViewer()
       await this.viewer?.unloadAll()
       this.viewerLoading = true
+
+      const APP_NAME = process.env.VUE_APP_SPECKLE_NAME
+      const TOKEN = `${APP_NAME}.AuthToken`
       try {
         await this.viewer?.loadObject(
-          `${this.serverUrl}/streams/${this.streamId}/objects/${referencedObject}`
+          `${this.serverUrl}/streams/${this.streamId}/objects/${referencedObject}`,
+          localStorage.getItem(TOKEN)
         )
       } finally {
         if (referencedObject == this.referencedObject) this.viewerLoading = false
