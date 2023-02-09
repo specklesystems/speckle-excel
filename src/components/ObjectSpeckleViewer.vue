@@ -41,6 +41,8 @@
         :stream-id="streamId"
         :commit-id="commitId"
         :commit-msg="commitMsg"
+        :nearest-object-id="updatedObjectId"
+        :path-from-nearest-object="`${entry.pathFromNearestObject}`"
       ></component>
     </v-card-text>
     <filter-modal ref="modal" />
@@ -93,12 +95,22 @@ export default {
     commitMsg: {
       type: String,
       default: null
+    },
+    nearestObjectId: {
+      type: String,
+      default: null
+    },
+    pathFromNearestObject: {
+      type: String,
+      default: null
     }
   },
   data() {
     return {
       localExpand: false,
-      progress: false
+      progress: false,
+      objectEntries: null,
+      updatedObjectId: null
     }
   },
   apollo: {
@@ -111,6 +123,9 @@ export default {
           id: this.value.referencedId
         }
       },
+      result() {
+        this.objectEntries = this.getObjectEntries()
+      },
       skip() {
         return !this.localExpand
       },
@@ -121,10 +136,85 @@ export default {
     }
   },
   computed: {
-    objectEntries() {
+    // objectEntries() {
+    //   if (!this.object) return []
+    //   let entries = Object.entries(this.object.data)
+    //   let arr = []
+    //   this.updatedObjectId = 'this.object.data.id ?? this.nearestObjectId'
+    //   const delimiter = ':::'
+    //   let pathFromObjBase = ''
+    //   console.log(nearestObjectId, delimiter, pathFromObjBase)
+    //   console.log(this.nearestObjectId)
+    //   for (let [key, val] of entries) {
+    //     let name = key
+    //     if (key.startsWith('__')) continue
+    //     if (key[0] === '@') name = key.substring(1)
+    //     if (key === 'totalChildrenCount') name = 'total children count'
+    //     if (key === 'speckle_type') name = 'speckle type'
+    //     if (Array.isArray(val)) {
+    //       arr.push({
+    //         key,
+    //         name,
+    //         value: val,
+    //         type: 'ObjectListViewer',
+    //         description: `List (${val.length} elements)`,
+    //         nearestObjectId: nearestObjectId,
+    //         pathFromObjId: pathFromObjBase
+    //       })
+    //     } else if (typeof val === 'object' && val !== null) {
+    //       if (val.speckle_type && val.speckle_type === 'reference') {
+    //         arr.push({
+    //           key,
+    //           name,
+    //           value: val,
+    //           type: 'ObjectSpeckleViewer'
+    //         })
+    //       } else {
+    //         arr.push({
+    //           key,
+    //           name,
+    //           value: val,
+    //           type: 'ObjectSimpleViewer'
+    //         })
+    //       }
+    //     } else {
+    //       arr.push({
+    //         key,
+    //         name,
+    //         value: val,
+    //         type: 'ObjectValueViewer'
+    //       })
+    //     }
+    //   }
+    //   arr.sort((a, b) => {
+    //     if (a.type === b.type) return 0
+    //     if (a.type === 'ObjectValueViewer') return -1
+    //     return 0
+    //   })
+    //   return arr
+    // },
+    // updatedObjectId() {
+    //   return this.object.data.id ?? this.nearestObjectId
+    // }
+  },
+  mounted() {
+    this.localExpand = this.expand
+  },
+  methods: {
+    toggleLoadExpand() {
+      this.localExpand = !this.localExpand
+    },
+    cancel() {
+      ac.abort()
+    },
+    getObjectEntries() {
       if (!this.object) return []
       let entries = Object.entries(this.object.data)
       let arr = []
+      this.updatedObjectId = this.object.data.id ?? this.nearestObjectId
+      const delimiter = ':::'
+      console.log(this.updatedObjectId, delimiter)
+      console.log(this.nearestObjectId)
       for (let [key, val] of entries) {
         let name = key
         if (key.startsWith('__')) continue
@@ -138,7 +228,7 @@ export default {
             name,
             value: val,
             type: 'ObjectListViewer',
-            description: `List (${val.length} elements)`
+            pathFromNearestObject: key + delimiter
           })
         } else if (typeof val === 'object' && val !== null) {
           if (val.speckle_type && val.speckle_type === 'reference') {
@@ -171,17 +261,6 @@ export default {
         return 0
       })
       return arr
-    }
-  },
-  mounted() {
-    this.localExpand = this.expand
-  },
-  methods: {
-    toggleLoadExpand() {
-      this.localExpand = !this.localExpand
-    },
-    cancel() {
-      ac.abort()
     },
     async bake() {
       this.progress = true

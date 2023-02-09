@@ -5,7 +5,7 @@ import { MD5, enc } from 'crypto-js'
 
 const unflatten = require('flat').unflatten
 
-let ignoreEndsWithProps = ['totalChildrenCount']
+let ignoreEndsWithProps = ['totalChildrenCount', 'elements']
 
 let streamId, sheet, rowStart, colStart, arrayData, isTabularData, arrayIdData
 let headerIndices = []
@@ -24,15 +24,18 @@ async function flattenData(item, signal) {
   }
 }
 
-async function getReferencedObject(reference, signal) {
+async function getReferencedObject(reference, signal, excludeElementsFromConstruction = true) {
   if (signal.aborted) return
+
+  let excludeProps = ['displayValue', 'displayMesh', '__closure']
+  if (excludeElementsFromConstruction) excludeProps.push('elements')
 
   let loader = await store.dispatch('getObject', {
     streamId: streamId,
     objectId: reference,
     options: {
       fullyTraverseArrays: false,
-      excludeProps: ['displayValue', 'displayMesh', '__closure', 'elements']
+      excludeProps: excludeProps
     },
     signal
   })
@@ -129,23 +132,6 @@ async function addIdDataToObjectData() {
   for (let i = 0; i < arrayIdData[0].length; i++) {
     headerIndices.push(previousLastIndex + 1 + i)
   }
-
-  // await window.Excel.run(async (context) => {
-  //   console.log('names')
-  //   const names = context.workbook.names
-  //   console.log('names', names)
-  //   const range = names.getItem('rrr').getRange()
-  //   range.load('address')
-  //   names.load('items')
-  //   await context.sync()
-
-  //   console.log('names', names.items)
-  //   console.log(range.address)
-  //   console.log('myNamedItem', range)
-  // })
-  // for (var header in arrayData[0]) {
-  //   console.log('header', header)
-  // }
 }
 
 function headerListToTree(headers) {
@@ -181,6 +167,40 @@ function hasObjects(data) {
     }
   }
   return false
+}
+
+async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal) {
+  if (!Array.isArray(data)) return data
+
+  if (data.length < 2 || !nearestObjectId) return data
+
+  const refIndex = data.findIndex((o) => o.speckle_type === 'reference')
+
+  // no referenced Ids, objects are already constructed
+  if (refIndex == -1) return data
+
+  var parent = await getReferencedObject(
+    nearestObjectId,
+    signal,
+    !pathFromNearestObj.toLowerCase().includes('elements')
+  )
+  if (signal.aborted) return data
+
+  const delimiter = ':::'
+  var pathArray = pathFromNearestObj.split(delimiter)
+  for (let i = 0; i < pathArray.length; i++) {
+    if (!pathArray[i]) continue
+    parent = parent[pathArray[i]]
+  }
+  if (
+    Array.isArray(parent) &&
+    data.length == parent.length &&
+    data[refIndex].referencedId == parent[refIndex].id
+  ) {
+    return parent
+  }
+  //TODO: add logging here. If this line is reached then I'm pretty sure I did the traversal logic wrong
+  return data
 }
 
 export async function receiveLatest(
@@ -227,12 +247,15 @@ export async function bake(
   _commitMsg,
   modal,
   signal,
+  nearestObjectId,
+  pathFromNearestObj,
   previousHeaders,
   previousRange
 ) {
   try {
     let address, range
     let selectedHeaders = previousHeaders
+    console.log('stuff', nearestObjectId, pathFromNearestObj)
 
     await window.Excel.run(async (context) => {
       if (previousRange) {
@@ -263,6 +286,12 @@ export async function bake(
       isTabularData = true
 
       if (signal.aborted) return
+
+      console.time('Execution Time')
+
+      data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
+      if (signal.aborted) return
+
       if (hasObjects(data, signal)) {
         isTabularData = false
         await flattenData(data, signal)
@@ -273,6 +302,7 @@ export async function bake(
         arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
       } else arrayData = data
 
+      console.timeEnd('Execution Time')
       if (signal.aborted) return
 
       if (!isTabularData && arrayData[0].length > 25) {

@@ -47,7 +47,7 @@
           <object-speckle-viewer
             v-if="stream"
             :stream-id="stream.id"
-            :object-id="stream.commit.referencedObject"
+            :nearest-object-id="stream.commit.referencedObject"
             :value="commitObject"
             :downloadable="false"
             :expand="true"

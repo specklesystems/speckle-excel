@@ -77,6 +77,10 @@ export default {
     commitMsg: {
       type: String,
       default: null
+    },
+    nearestObjectId: {
+      type: String,
+      default: null
     }
   },
   data() {

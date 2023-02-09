@@ -11,11 +11,6 @@ const routes = [
     name: 'streams',
     component: () => import('../views/Streams.vue')
   },
-  // {
-  //   path: '/add',
-  //   name: 'add',
-  //   component: () => import('../views/Add.vue')
-  // },
   {
     path: '/streams/:streamId/commits/:commitId',
     name: 'commit',
