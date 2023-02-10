@@ -57,14 +57,13 @@ async function flattenSingle(item, signal) {
     // TODO: we don't need to capture EVERY id like I'm doing here...
     if (key.endsWith('id')) {
       rowIdData += value + ','
-    } else {
-      let colIndex = arrayData[0].findIndex((x) => x === key)
-      if (colIndex === -1) {
-        colIndex = arrayData[0].length
-        arrayData[0].push(key)
-      }
-      rowData[colIndex] = Array.isArray(value) ? JSON.stringify(value) : value
     }
+    let colIndex = arrayData[0].findIndex((x) => x === key)
+    if (colIndex === -1) {
+      colIndex = arrayData[0].length
+      arrayData[0].push(key)
+    }
+    rowData[colIndex] = Array.isArray(value) ? JSON.stringify(value) : value
   }
   arrayData.push(rowData)
   arrayIdData.push(rowIdData)
