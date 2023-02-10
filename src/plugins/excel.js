@@ -8,7 +8,6 @@ const unflatten = require('flat').unflatten
 let ignoreEndsWithProps = ['totalChildrenCount', 'elements']
 
 let streamId, sheet, rowStart, colStart, arrayData, isTabularData, arrayIdData
-let headerIndices = []
 
 async function flattenData(item, signal) {
   if (signal.aborted) return
@@ -87,33 +86,23 @@ async function bakeArray(data, context) {
       colIndex++
     }
   }
-  //it's a list of lists aka table
+  // it's a list of lists aka table
   else {
-    let counter = 0
     let rowIndex = 0
-    for (let array of data) {
-      let colIndex = 0
-      let actualColIndex = 0
-      for (let item of array) {
-        if (headerIndices.length === 0 || headerIndices.includes(colIndex)) {
-          let valueRange = sheet.getCell(rowIndex + rowStart, actualColIndex + colStart)
-          valueRange.values = Array.isArray(item) ? JSON.stringify(item) : item
-          actualColIndex++
-          counter++
-        }
-        colIndex++
-        //sync in batches to avoid a RequestPayloadSizeLimitExceeded
-        if (counter > 5000) {
-          counter = 0
-          await context.sync()
-        }
-      }
-
-      // add a space in the next cell to hide the overflow the the speckleIDs row
-      let valueRange = sheet.getCell(rowIndex + rowStart, actualColIndex + colStart)
-      valueRange.values = ' '
-
-      rowIndex++
+    let batchSize = 50
+    while (rowIndex < data.length) {
+      let dataBatch = data.slice(rowIndex, rowIndex + batchSize)
+      let numRows = dataBatch.length
+      let rangeAddress = getRangeAddressFromIndicies(
+        rowStart + rowIndex,
+        colStart,
+        rowStart + rowIndex + numRows - 1,
+        colStart + data[0].length - 1
+      )
+      let valueRange = sheet.getRange(rangeAddress)
+      valueRange.values = dataBatch
+      rowIndex += numRows
+      await context.sync()
     }
   }
 }
@@ -123,19 +112,12 @@ async function addIdDataToObjectData() {
     console.log('Could not attach object ids to table')
     return
   }
-
-  var previousLastIndex = arrayData[0].length - 1
-  // for (let i = 0; i < arrayIdData.length; i++) {
-  //   arrayData[i].push(...arrayIdData[i])
-  // }
-  // for (let i = 0; i < arrayIdData[0].length; i++) {
-  //   headerIndices.push(previousLastIndex + 1 + i)
-  // }
   for (let i = 0; i < arrayData.length; i++) {
     arrayData[i].push(arrayIdData[i])
+    // push an empty space at the end of each array because it will trim the overflow from the
+    // speckleIds in the previous column
+    arrayData[i].push(' ')
   }
-  console.log('headindicies', headerIndices)
-  if (!isTabularData && arrayData[0].length > 25) headerIndices.push(previousLastIndex + 1)
 }
 
 function headerListToTree(headers) {
@@ -207,27 +189,27 @@ async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj,
   return data
 }
 
-// function getRangeAddressFromIndicies(startRow, startCol, endRow, endCol) {
-//   let range = ''
+function getRangeAddressFromIndicies(startRow, startCol, endRow, endCol) {
+  let range = ''
 
-//   range += numberToLetters(startCol) + String(startRow + 1)
-//   range += ':'
-//   range += numberToLetters(endCol) + String(endRow + 1)
+  range += numberToLetters(startCol) + String(startRow + 1)
+  range += ':'
+  range += numberToLetters(endCol) + String(endRow + 1)
 
-//   return range
-// }
+  return range
+}
 
-// // this function is brought to you by chatGPT
-// function numberToLetters(number) {
-//   const base = 26
-//   let letters = ''
-//   do {
-//     const remainder = number % base
-//     letters = String.fromCharCode(65 + remainder) + letters
-//     number = Math.floor(number / base) - 1
-//   } while (number >= 0)
-//   return letters
-// }
+// this function is brought to you by chatGPT
+function numberToLetters(number) {
+  const base = 26
+  let letters = ''
+  do {
+    const remainder = number % base
+    letters = String.fromCharCode(65 + remainder) + letters
+    number = Math.floor(number / base) - 1
+  } while (number >= 0)
+  return letters
+}
 
 export async function receiveLatest(
   reference,
@@ -304,9 +286,7 @@ export async function bake(
 
       streamId = _streamId
       arrayData = [[]]
-      // arrayIdData = [[]]
       arrayIdData = ['speckleIDs']
-      headerIndices = []
 
       //if the incoming data has objects we need to flatten them to an array
       //otherwise we just output it
@@ -335,6 +315,7 @@ export async function bake(
 
       if (!isTabularData && arrayData[0].length > 25) {
         //it's manual run
+        let filteredData = [[]]
         if (!previousHeaders && modal) {
           let headers = headerListToTree(arrayData[0], signal)
           let dialog = await modal.open(
@@ -350,15 +331,36 @@ export async function bake(
           }
           if (arrayData[0].length !== dialog.items.length) {
             selectedHeaders = dialog.items
-            //construct a list of the index of each header to include
-            for (let item of selectedHeaders) headerIndices.push(arrayData[0].indexOf(item))
+
+            // initialize filteredData array with empty arrays
+            for (let i = 0; i < arrayData.length; i++) {
+              filteredData[i] = []
+            }
+            for (let item of selectedHeaders) {
+              let index = arrayData[0].indexOf(item)
+              if (index === -1) continue
+
+              for (let i = 0; i < arrayData.length; i++) {
+                filteredData[i].push(arrayData[i][index])
+              }
+            }
           }
         } else if (previousHeaders) {
+          // initialize filteredData array with empty arrays
+          for (let i = 0; i < arrayData.length; i++) {
+            filteredData[i] = []
+          }
           for (let item of previousHeaders) {
             let index = arrayData[0].indexOf(item)
-            if (index !== -1) headerIndices.push(index)
+            if (index === -1) continue
+
+            for (let i = 0; i < arrayData.length; i++) {
+              filteredData[i].push(arrayData[i][index])
+            }
           }
         }
+
+        arrayData = filteredData
       }
 
       if (signal.aborted) return
