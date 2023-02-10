@@ -34,6 +34,8 @@
         :stream-id="streamId"
         :commit-id="commitId"
         :commit-msg="commitMsg"
+        :nearest-object-id="nearestObjectId"
+        :path-from-nearest-object="`${entry.pathFromNearestObject}`"
       ></component>
     </v-card-text>
     <v-card-text v-if="localExpand && currentLimit < value.length">
@@ -108,8 +110,8 @@ export default {
             value: val,
             type: 'ObjectListViewer',
             pathFromNearestObject: this.pathFromNearestObject
-              ? this.pathFromNearestObject + index + delimiter
-              : index + delimiter
+              ? this.pathFromNearestObject + (index - 1) + delimiter
+              : index - 1 + delimiter
           })
         } else if (typeof val === 'object' && val !== null) {
           if (val.speckle_type && val.speckle_type === 'reference') {
