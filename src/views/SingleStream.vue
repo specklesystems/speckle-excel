@@ -300,6 +300,16 @@ import { Viewer, ViewerEvent } from '@speckle/viewer'
 let ac = new AbortController()
 
 export default {
+  async beforeRouteLeave(to, from, next) {
+    // remove on selection changed event that is tied to the viewer
+    await window.Excel.run(this.onSelectionChangedEvent.context, async (context) => {
+      console.log(this.onSelectionChangedEvent)
+      this.onSelectionChangedEvent.remove()
+      await context.sync()
+      this.onSelectionChangedEvent = null
+    })
+    next()
+  },
   props: {
     streamId: {
       type: String,
@@ -321,7 +331,8 @@ export default {
       selectedBranchName: null,
       selectedCommitId: null,
       viewerLoading: false,
-      referencedObject: null
+      referencedObject: null,
+      onSelectionChangedEvent: null
     }
   },
   apollo: {
@@ -552,7 +563,8 @@ export default {
       // highlight selected objects in viewer
       await window.Excel.run(async (context) => {
         var sheet = context.workbook.worksheets.getActiveWorksheet()
-        sheet.onSelectionChanged.add(this.checkModelForSelection)
+        this.onSelectionChangedEvent ??= sheet.onSelectionChanged.add(this.checkModelForSelection)
+        await context.sync()
       })
 
       v.setLightConfiguration({
