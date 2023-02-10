@@ -530,7 +530,7 @@ export default {
             var sheet = context.workbook.worksheets.getActiveWorksheet()
             var range = sheet.getRange()
             var found = range.findOrNullObject(speckleId, {
-              completeMatch: true, // Match the whole cell value.
+              completeMatch: false, // Match the whole cell value.
               matchCase: false, // Don't match case.
               searchDirection: window.Excel.SearchDirection.forward // Start search at the beginning of the range.
             })
@@ -624,7 +624,12 @@ export default {
         var idsInViewer = new Array()
         for (let i = 0; i < extendedRange.text?.length; i++) {
           for (let j = 0; j < extendedRange.text[i].length; j++) {
-            idsInViewer.push(extendedRange.text[i][j])
+            if (extendedRange.text[i][j].length < 32) continue
+            var splitIDs = extendedRange.text[i][j].split(',')
+            for (let id = 0; id < splitIDs.length; id++) {
+              if (splitIDs[id].length == 32) idsInViewer.push(splitIDs[id])
+            }
+            // idsInViewer.push(extendedRange.text[i][j])
           }
         }
 

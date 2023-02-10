@@ -50,26 +50,21 @@ async function flattenSingle(item, signal) {
 
   let flat = flatten(item)
   let rowData = []
-  let rowIdData = []
+  // let rowIdData = []
+  let rowIdData = ''
   for (const [key, value] of Object.entries(flat)) {
     if (key === null || value === null) continue
     if (ignoreEndsWithProps.findIndex((x) => key.endsWith(x)) !== -1) continue
-    // TODO: only capturing the first id to map objects between the viewer and the sheet.
-    // there are probably many cases where this wouldn't be sufficient
-    if (key == 'id') {
-      let colIndex = arrayIdData[0].findIndex((x) => x === key)
-      if (colIndex === -1) {
-        colIndex = arrayIdData[0].length
-        arrayIdData[0].push(key)
-      }
-      rowIdData[colIndex] = value
+    // TODO: we don't need to capture EVERY id like I'm doing here...
+    if (key.endsWith('id')) {
+      rowIdData += value + ','
     } else {
       let colIndex = arrayData[0].findIndex((x) => x === key)
       if (colIndex === -1) {
         colIndex = arrayData[0].length
         arrayData[0].push(key)
       }
-      rowData[colIndex] = value
+      rowData[colIndex] = Array.isArray(value) ? JSON.stringify(value) : value
     }
   }
   arrayData.push(rowData)
@@ -114,6 +109,10 @@ async function bakeArray(data, context) {
         }
       }
 
+      // add a space in the next cell to hide the overflow the the speckleIDs row
+      let valueRange = sheet.getCell(rowIndex + rowStart, actualColIndex + colStart)
+      valueRange.values = ' '
+
       rowIndex++
     }
   }
@@ -126,12 +125,17 @@ async function addIdDataToObjectData() {
   }
 
   var previousLastIndex = arrayData[0].length - 1
-  for (let i = 0; i < arrayIdData.length; i++) {
-    arrayData[i].push(...arrayIdData[i])
+  // for (let i = 0; i < arrayIdData.length; i++) {
+  //   arrayData[i].push(...arrayIdData[i])
+  // }
+  // for (let i = 0; i < arrayIdData[0].length; i++) {
+  //   headerIndices.push(previousLastIndex + 1 + i)
+  // }
+  for (let i = 0; i < arrayData.length; i++) {
+    arrayData[i].push(arrayIdData[i])
   }
-  for (let i = 0; i < arrayIdData[0].length; i++) {
-    headerIndices.push(previousLastIndex + 1 + i)
-  }
+  console.log('headindicies', headerIndices)
+  if (!isTabularData && arrayData[0].length > 25) headerIndices.push(previousLastIndex + 1)
 }
 
 function headerListToTree(headers) {
@@ -202,6 +206,28 @@ async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj,
   //TODO: add logging here. If this line is reached then I'm pretty sure I did the traversal logic wrong
   return data
 }
+
+// function getRangeAddressFromIndicies(startRow, startCol, endRow, endCol) {
+//   let range = ''
+
+//   range += numberToLetters(startCol) + String(startRow + 1)
+//   range += ':'
+//   range += numberToLetters(endCol) + String(endRow + 1)
+
+//   return range
+// }
+
+// // this function is brought to you by chatGPT
+// function numberToLetters(number) {
+//   const base = 26
+//   let letters = ''
+//   do {
+//     const remainder = number % base
+//     letters = String.fromCharCode(65 + remainder) + letters
+//     number = Math.floor(number / base) - 1
+//   } while (number >= 0)
+//   return letters
+// }
 
 export async function receiveLatest(
   reference,
@@ -278,7 +304,8 @@ export async function bake(
 
       streamId = _streamId
       arrayData = [[]]
-      arrayIdData = [[]]
+      // arrayIdData = [[]]
+      arrayIdData = ['speckleIDs']
       headerIndices = []
 
       //if the incoming data has objects we need to flatten them to an array
@@ -304,6 +331,7 @@ export async function bake(
 
       console.timeEnd('Execution Time')
       if (signal.aborted) return
+      console.log('array data', arrayData)
 
       if (!isTabularData && arrayData[0].length > 25) {
         //it's manual run
@@ -336,7 +364,9 @@ export async function bake(
       if (signal.aborted) return
 
       addIdDataToObjectData()
+      console.time('bakeArray')
       await bakeArray(arrayData, context)
+      console.timeEnd('bakeArray')
       await context.sync()
 
       await store.dispatch('receiveCommit', {
