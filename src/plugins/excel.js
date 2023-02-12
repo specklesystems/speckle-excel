@@ -188,16 +188,6 @@ async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj,
   return data
 }
 
-function getRangeAddressFromIndicies(startRow, startCol, endRow, endCol) {
-  let range = ''
-
-  range += numberToLetters(startCol) + String(startRow + 1)
-  range += ':'
-  range += numberToLetters(endCol) + String(endRow + 1)
-
-  return range
-}
-
 // this function is brought to you by chatGPT
 function numberToLetters(number) {
   const base = 26
@@ -208,6 +198,49 @@ function numberToLetters(number) {
     number = Math.floor(number / base) - 1
   } while (number >= 0)
   return letters
+}
+
+// so is this one
+function lettersToNumber(letters) {
+  const base = 26
+  let number = 0
+  for (let i = 0; i < letters.length; i++) {
+    const charCode = letters.charCodeAt(i) - 65 + 1
+    number = number * base + charCode
+  }
+  return number - 1
+}
+
+export function getRangeAddressFromIndicies(startRow, startCol, endRow, endCol) {
+  let range = ''
+
+  range += numberToLetters(startCol) + String(startRow + 1)
+  range += ':'
+  range += numberToLetters(endCol) + String(endRow + 1)
+
+  return range
+}
+
+export function getIndiciesFromRangeAddress(address) {
+  let parts = address.match(/[a-zA-Z]+|[0-9]+/g)
+
+  // if the sheet is part of the address, then get rid of it
+  if (parts[0] === 'Sheet') parts.splice(0, 2)
+
+  let output = []
+  for (let part of parts) {
+    let numValue = parseInt(part)
+    if (numValue) numValue -= 1
+    else numValue = lettersToNumber(part)
+    output.push(numValue)
+  }
+
+  if (output.length == 2) {
+    output[2] = output[0]
+    output[3] = output[1]
+  }
+
+  return output
 }
 
 export async function receiveLatest(
@@ -262,7 +295,6 @@ export async function bake(
   try {
     let address, range
     let selectedHeaders = previousHeaders
-    console.log('stuff', nearestObjectId, pathFromNearestObj)
 
     await window.Excel.run(async (context) => {
       if (previousRange) {
@@ -293,8 +325,6 @@ export async function bake(
 
       if (signal.aborted) return
 
-      console.time('Execution Time')
-
       data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
       if (signal.aborted) return
 
@@ -308,9 +338,7 @@ export async function bake(
         arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
       } else arrayData = data
 
-      console.timeEnd('Execution Time')
       if (signal.aborted) return
-      console.log('array data', arrayData)
 
       if (!isTabularData && arrayData[0].length > 25) {
         //it's manual run
@@ -365,9 +393,7 @@ export async function bake(
       if (signal.aborted) return
 
       addIdDataToObjectData()
-      console.time('bakeArray')
       await bakeArray(arrayData, context)
-      console.timeEnd('bakeArray')
       await context.sync()
 
       await store.dispatch('receiveCommit', {

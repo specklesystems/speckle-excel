@@ -291,7 +291,12 @@
 </template>
 <script>
 import streamQuery from '../graphql/stream.gql'
-import { send, receiveLatest } from '../plugins/excel'
+import {
+  send,
+  receiveLatest,
+  getIndiciesFromRangeAddress,
+  getRangeAddressFromIndicies
+} from '../plugins/excel'
 import gql from 'graphql-tag'
 import { createClient } from '../vue-apollo'
 import { Viewer, ViewerEvent } from '@speckle/viewer'
@@ -303,7 +308,6 @@ export default {
   async beforeRouteLeave(to, from, next) {
     // remove on selection changed event that is tied to the viewer
     await window.Excel.run(this.onSelectionChangedEvent.context, async (context) => {
-      console.log(this.onSelectionChangedEvent)
       this.onSelectionChangedEvent.remove()
       await context.sync()
       this.onSelectionChangedEvent = null
@@ -517,9 +521,6 @@ export default {
       }
     }
   },
-  mounted() {
-    console.log('mounted')
-  },
   methods: {
     async initViewer() {
       if (this.viewer) {
@@ -539,7 +540,7 @@ export default {
           v.selectObjects(new Array(data?.hits[0]?.object.id))
           await window.Excel.run(async (context) => {
             var sheet = context.workbook.worksheets.getActiveWorksheet()
-            var range = sheet.getRange()
+            var range = sheet.getUsedRange()
             var found = range.findOrNullObject(speckleId, {
               completeMatch: false, // Match the whole cell value.
               matchCase: false, // Don't match case.
@@ -554,8 +555,6 @@ export default {
               found.getExtendedRange(window.Excel.KeyboardDirection.left, found).select()
             }
             await context.sync()
-
-            console.log(found?.address)
           })
         }
       })
@@ -612,51 +611,82 @@ export default {
         this.selectedBranch.commits.items[index].referencedObject
       )
     },
-    async checkModelForSelection(args) {
+    async checkModelForSelection() {
       if (!this.filterViewer) {
         this.filterViewer = true
         return
       }
-      console.log('shut up, prettier', args)
+      let speckleIdColIndex = await this.getSpeckleIdsColIndex()
       await window.Excel.run(async (context) => {
         // Get the selected range.
         let range = context.workbook.getSelectedRange()
+        range.load('address')
+        await context.sync()
+        let selectedRangeIndicies = getIndiciesFromRangeAddress(range.address)
 
-        // Get the active cell in the workbook.
-        let activeCell = context.workbook.getActiveCell()
+        if (selectedRangeIndicies[0] > speckleIdColIndex) {
+          this.unisolateObjects()
+          return
+        }
 
-        // Get the top-most cell of the current used range.
-        // This method acts like the Ctrl+Up arrow key keyboard shortcut while a range is selected.
-        let extendedRange = range.getExtendedRange(window.Excel.KeyboardDirection.right, activeCell)
-        extendedRange.load('text')
-        range.load('text')
+        let speckleIdRangeAddress = getRangeAddressFromIndicies(
+          selectedRangeIndicies[1],
+          speckleIdColIndex,
+          selectedRangeIndicies[3],
+          speckleIdColIndex
+        )
+        let speckleIdRange = context.workbook.worksheets
+          .getActiveWorksheet()
+          .getRange(speckleIdRangeAddress)
+        speckleIdRange.load('text')
         await context.sync()
 
-        if (extendedRange.text == null) extendedRange = range
-        var idsInViewer = new Array()
-        for (let i = 0; i < extendedRange.text?.length; i++) {
-          for (let j = 0; j < extendedRange.text[i].length; j++) {
-            if (extendedRange.text[i][j].length < 32) continue
-            var splitIDs = extendedRange.text[i][j].split(',')
+        let idsInViewer = new Array()
+        for (let i = 0; i < speckleIdRange.text?.length; i++) {
+          for (let j = 0; j < speckleIdRange.text[i].length; j++) {
+            if (speckleIdRange.text[i][j].length < 32) continue
+            let splitIDs = speckleIdRange.text[i][j].split(',')
             for (let id = 0; id < splitIDs.length; id++) {
               if (splitIDs[id].length == 32) idsInViewer.push(splitIDs[id])
             }
-            // idsInViewer.push(extendedRange.text[i][j])
           }
         }
 
-        // unisolate previous objects
-        if (this.selectedObjectIds?.length > 0) {
-          this.viewer?.resetFilters()
-          this.viewer?.unIsolateObjects(this.selectedObjectIds)
-          this.selectedObjectIds = null
-        }
+        this.unisolateObjects()
 
         if (idsInViewer.length > 0) {
           this.viewer?.isolateObjects(idsInViewer)
           this.selectedObjectIds = idsInViewer
           // this.viewer?.zoom(idsInViewer)
         }
+      })
+    },
+    unisolateObjects() {
+      // unisolate previous objects
+      if (this.selectedObjectIds?.length > 0) {
+        this.viewer?.resetFilters()
+        this.viewer?.unIsolateObjects(this.selectedObjectIds)
+        this.selectedObjectIds = null
+      }
+    },
+    async getSpeckleIdsColIndex() {
+      return await window.Excel.run(async (context) => {
+        let sheet = context.workbook.worksheets.getActiveWorksheet()
+        let usedRange = sheet.getUsedRange()
+
+        // TODO: we may need to narrow the search field for large wbs
+        // or if we want to have more stable support for multiple tables in the same sheet
+
+        var found = usedRange.findOrNullObject('speckleIDs', {
+          completeMatch: true, // Match the whole cell value.
+          matchCase: true, // Don't match case.
+          searchDirection: window.Excel.SearchDirection.forward // Start search at the beginning of the range.
+        })
+        found.load('address')
+        await context.sync()
+
+        var idHeaderAddressIndicies = getIndiciesFromRangeAddress(found.address)
+        return idHeaderAddressIndicies[0]
       })
     },
     swapReceiver() {
