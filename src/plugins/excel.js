@@ -261,6 +261,14 @@ export async function receiveLatest(
       item = item[part]
     }
 
+    if (!item) {
+      store.dispatch('showSnackbar', {
+        message: 'Could not match the previous data structure',
+        color: 'error'
+      })
+      return
+    }
+
     await bake(
       item,
       _streamId,
@@ -268,6 +276,8 @@ export async function receiveLatest(
       _commitMsg,
       null,
       signal,
+      null,
+      null,
       receiverSelection.headers,
       receiverSelection.range
     )
