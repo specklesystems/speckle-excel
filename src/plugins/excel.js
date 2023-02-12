@@ -49,7 +49,6 @@ async function flattenSingle(item, signal) {
 
   let flat = flatten(item)
   let rowData = []
-  // let rowIdData = []
   let rowIdData = ''
   for (const [key, value] of Object.entries(flat)) {
     if (key === null || value === null) continue
@@ -189,6 +188,13 @@ async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj,
 }
 
 // this function is brought to you by chatGPT
+// it takes in an excel column index and outputs the column string
+// 0 -> A
+// 1 -> B
+// ...
+// 26 -> AA
+// 27 -> AB
+// ...
 function numberToLetters(number) {
   const base = 26
   let letters = ''
@@ -200,7 +206,13 @@ function numberToLetters(number) {
   return letters
 }
 
-// so is this one
+// this function is also the intellectual property of chatGPT
+// it does the opposite of the numberToLetters function
+// A -> 0
+// B -> 1
+// ...
+// AA -> 26
+// ...
 function lettersToNumber(letters) {
   const base = 26
   let number = 0
@@ -353,6 +365,10 @@ export async function bake(
       if (!isTabularData && arrayData[0].length > 25) {
         //it's manual run
         let filteredData = [[]]
+        // initialize filteredData array with empty arrays
+        for (let i = 0; i < arrayData.length; i++) {
+          filteredData[i] = []
+        }
         if (!previousHeaders && modal) {
           let headers = headerListToTree(arrayData[0], signal)
           let dialog = await modal.open(
@@ -369,10 +385,6 @@ export async function bake(
           if (arrayData[0].length !== dialog.items.length) {
             selectedHeaders = dialog.items
 
-            // initialize filteredData array with empty arrays
-            for (let i = 0; i < arrayData.length; i++) {
-              filteredData[i] = []
-            }
             for (let item of selectedHeaders) {
               let index = arrayData[0].indexOf(item)
               if (index === -1) continue
@@ -383,10 +395,6 @@ export async function bake(
             }
           }
         } else if (previousHeaders) {
-          // initialize filteredData array with empty arrays
-          for (let i = 0; i < arrayData.length; i++) {
-            filteredData[i] = []
-          }
           for (let item of previousHeaders) {
             let index = arrayData[0].indexOf(item)
             if (index === -1) continue

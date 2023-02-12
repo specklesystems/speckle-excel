@@ -122,15 +122,6 @@ export default {
       this.$router.push('/')
     },
     openStream() {
-      // this.$store.dispatch('addStream', {
-      //   id: this.stream.id,
-      //   isReceiver: true,
-      //   selection: null,
-      //   hasHeaders: false,
-      //   selectedBranchName: null,
-      //   selectedCommitId: null
-      // })
-      this.$store.currentStream = this.stream
       this.$router.push(`/streams/${this.stream.id}`)
     }
   }

@@ -257,9 +257,7 @@ export default {
           }
         })
         var stream = res.data.stream
-        this.$store.currentStream = stream
         this.$router.push(`/streams/${stream.id}`)
-        console.log('stream', res)
         // this.$eventHub.$emit('notification', {
         //   text: 'Stream Added by URL!\n'
         // })

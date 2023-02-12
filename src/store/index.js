@@ -100,13 +100,11 @@ const vuexExcel = new VuexPersistence({
 
 export default new Vuex.Store({
   state: {
-    snackbar: {},
-    currentStream: {}
+    snackbar: {}
   },
   plugins: [vuexLocal.plugin, vuexExcel.plugin],
   getters: {
     serverUrl: () => localStorage.getItem('serverUrl')
-    // streamId: () => this.currentStreamId
   },
   mutations: {
     SET_SNACKBAR(state, value) {
