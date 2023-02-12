@@ -20,7 +20,7 @@ const routes = [
     component: () => import('../views/Commit.vue')
   },
   {
-    path: '/streams/:streamId',
+    path: '/streams/:streamId/:commitId?',
     name: 'stream',
     meta: {
       title: 'Stream | Speckle'

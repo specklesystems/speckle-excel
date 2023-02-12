@@ -132,7 +132,7 @@ export default {
       privateStream: false,
       streamName: '',
       description: '',
-      defaultDescription: 'Stream created from SketchUp',
+      defaultDescription: 'Stream created from Excel',
       accountToCreateStream: null,
       streamId: ''
     }
@@ -148,59 +148,6 @@ export default {
     user: {
       query: userQuery
     }
-    // stream: {
-    //   //   prefetch: true,
-    //   query: gql`
-    //         query Stream($id: String!){
-    //           stream(id: $id){
-    //             id
-    //             name
-    //             description
-    //             isPublic
-    //             role
-    //             createdAt
-    //             updatedAt
-    //             commentCount
-    //             favoritedDate
-    //             favoritesCount
-    //             collaborators {
-    //               id
-    //               name
-    //               role
-    //               avatar
-    //             },
-    //             branches (limit: ${10}){
-    //               totalCount,
-    //               cursor,
-    //               items {
-    //                 id,
-    //                 name,
-    //                 description,
-    //                 commits {
-    //                   totalCount
-    //                 }
-    //               }
-    //             }
-    //           }
-    //         }
-    //       `,
-    //   fetchPolicy: 'network-only',
-    //   variables() {
-    //     return {
-    //       id: this.savedStream.id
-    //     }
-    //   },
-    //   error(error) {
-    //     console.log(this.error)
-    //     this.error = JSON.stringify(error.message)
-    //       .replaceAll('"', '')
-    //       .replace('GraphQL error: ', '')
-    //     console.log(this.error)
-    //   },
-    //   skip() {
-    //     return this.savedStream === null
-    //   }
-    // }
   },
   methods: {
     refresh() {
@@ -214,63 +161,8 @@ export default {
           this.accountId,
           this.serverUrl
         )
-        // this.streamId = streamWrapper.streamId
-        // let stream = this.$apollo.queries.stream.start()
-        // console.log(stream)
-        let res = await this.$apollo.query({
-          query: gql`
-            query Stream($id: String!){
-              stream(id: $id){
-                id
-                name
-                description
-                isPublic
-                role
-                createdAt
-                updatedAt
-                commentCount
-                favoritedDate
-                favoritesCount
-                collaborators {
-                  id
-                  name
-                  role
-                  avatar
-                },
-                branches (limit: ${10}){
-                  totalCount,
-                  cursor,
-                  items {
-                    id,
-                    name,
-                    description,
-                    commits {
-                      totalCount
-                    }
-                  }
-                }
-              }
-            }
-          `,
-          variables: {
-            id: streamWrapper.streamId
-          }
-        })
-        var stream = res.data.stream
-        this.$router.push(`/streams/${stream.id}`)
-        // this.$eventHub.$emit('notification', {
-        //   text: 'Stream Added by URL!\n'
-        // })
-        // this.$router
-        // bus.$emit('stream-added-by-id-or-url', stream.id)
+        this.$router.push(`/streams/${streamWrapper.streamId}/${streamWrapper.commitId}`)
       } catch (e) {
-        // this.$eventHub.$emit('error', {
-        //   text:
-        //     'The stream you are trying to add might;\n' +
-        //     '- lies on different server, \n' +
-        //     '- be private, \n' +
-        //     '- not exist anymore.'
-        // })
         console.log(e)
       }
       this.showCreateStreamById = false

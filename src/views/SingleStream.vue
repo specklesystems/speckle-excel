@@ -318,6 +318,10 @@ export default {
     streamId: {
       type: String,
       default: null
+    },
+    commitId: {
+      type: String,
+      default: null
     }
   },
   data() {
@@ -364,6 +368,15 @@ export default {
           this.isReceiver = true
           this.selectedBranchName = this.selectedBranch.name
           this.selectedCommitId = this.selectedCommit.id
+        }
+
+        // if this page is reached via a link with a commit id, this set the branch and id on the card
+        if (this.commitId) {
+          this.selectedCommitId = this.commitId
+          const branch = this.stream.branches.items.find(
+            (x) => x.commits.items.findIndex((y) => y.id == this.selectedCommitId) !== -1
+          )
+          this.selectedBranchName = branch.name
         }
 
         this.$nextTick(function () {
