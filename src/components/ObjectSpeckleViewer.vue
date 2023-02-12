@@ -135,68 +135,6 @@ export default {
       }
     }
   },
-  computed: {
-    // objectEntries() {
-    //   if (!this.object) return []
-    //   let entries = Object.entries(this.object.data)
-    //   let arr = []
-    //   this.updatedObjectId = 'this.object.data.id ?? this.nearestObjectId'
-    //   const delimiter = ':::'
-    //   let pathFromObjBase = ''
-    //   console.log(nearestObjectId, delimiter, pathFromObjBase)
-    //   console.log(this.nearestObjectId)
-    //   for (let [key, val] of entries) {
-    //     let name = key
-    //     if (key.startsWith('__')) continue
-    //     if (key[0] === '@') name = key.substring(1)
-    //     if (key === 'totalChildrenCount') name = 'total children count'
-    //     if (key === 'speckle_type') name = 'speckle type'
-    //     if (Array.isArray(val)) {
-    //       arr.push({
-    //         key,
-    //         name,
-    //         value: val,
-    //         type: 'ObjectListViewer',
-    //         description: `List (${val.length} elements)`,
-    //         nearestObjectId: nearestObjectId,
-    //         pathFromObjId: pathFromObjBase
-    //       })
-    //     } else if (typeof val === 'object' && val !== null) {
-    //       if (val.speckle_type && val.speckle_type === 'reference') {
-    //         arr.push({
-    //           key,
-    //           name,
-    //           value: val,
-    //           type: 'ObjectSpeckleViewer'
-    //         })
-    //       } else {
-    //         arr.push({
-    //           key,
-    //           name,
-    //           value: val,
-    //           type: 'ObjectSimpleViewer'
-    //         })
-    //       }
-    //     } else {
-    //       arr.push({
-    //         key,
-    //         name,
-    //         value: val,
-    //         type: 'ObjectValueViewer'
-    //       })
-    //     }
-    //   }
-    //   arr.sort((a, b) => {
-    //     if (a.type === b.type) return 0
-    //     if (a.type === 'ObjectValueViewer') return -1
-    //     return 0
-    //   })
-    //   return arr
-    // },
-    // updatedObjectId() {
-    //   return this.object.data.id ?? this.nearestObjectId
-    // }
-  },
   mounted() {
     this.localExpand = this.expand
   },
