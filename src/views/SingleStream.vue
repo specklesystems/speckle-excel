@@ -307,11 +307,13 @@ let ac = new AbortController()
 export default {
   async beforeRouteLeave(to, from, next) {
     // remove on selection changed event that is tied to the viewer
-    await window.Excel.run(this.onSelectionChangedEvent.context, async (context) => {
-      this.onSelectionChangedEvent.remove()
-      await context.sync()
-      this.onSelectionChangedEvent = null
-    })
+    if (this.onSelectionChangedEvent) {
+      await window.Excel.run(this.onSelectionChangedEvent.context, async (context) => {
+        this.onSelectionChangedEvent.remove()
+        await context.sync()
+        this.onSelectionChangedEvent = null
+      })
+    }
     next()
   },
   props: {
