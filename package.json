@@ -13,7 +13,7 @@
     "validate": "office-toolbox validate -m public/manifest.xml"
   },
   "dependencies": {
-    "@speckle/objectloader": "^2.9.0",
+    "@speckle/objectloader": "^2.12.0",
     "core-js": "^3.6.5",
     "crypto-js": "^4.1.1",
     "flat": "^5.0.2",
