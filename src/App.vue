@@ -111,11 +111,6 @@ export default {
     showSnackbar: false,
     items: [
       {
-        name: 'Add stream',
-        icon: '➕',
-        to: '/add'
-      },
-      {
         name: 'Streams',
         icon: '📃',
         to: '/'

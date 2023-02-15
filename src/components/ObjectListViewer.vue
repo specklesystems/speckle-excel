@@ -34,6 +34,8 @@
         :stream-id="streamId"
         :commit-id="commitId"
         :commit-msg="commitMsg"
+        :nearest-object-id="nearestObjectId"
+        :path-from-nearest-object="`${entry.pathFromNearestObject}`"
       ></component>
     </v-card-text>
     <v-card-text v-if="localExpand && currentLimit < value.length">
@@ -77,6 +79,14 @@ export default {
     commitMsg: {
       type: String,
       default: null
+    },
+    nearestObjectId: {
+      type: String,
+      default: null
+    },
+    pathFromNearestObject: {
+      type: String,
+      default: null
     }
   },
   data() {
@@ -91,13 +101,17 @@ export default {
     rangeEntries() {
       let arr = []
       let index = 0
+      const delimiter = ':::'
       for (let val of this.range) {
         index++
         if (Array.isArray(val)) {
           arr.push({
             key: `${index}`,
             value: val,
-            type: 'ObjectListViewer'
+            type: 'ObjectListViewer',
+            pathFromNearestObject: this.pathFromNearestObject
+              ? this.pathFromNearestObject + (index - 1) + delimiter
+              : index - 1 + delimiter
           })
         } else if (typeof val === 'object' && val !== null) {
           if (val.speckle_type && val.speckle_type === 'reference') {
@@ -155,8 +169,11 @@ export default {
         this.commitId,
         this.commitMsg,
         this.$refs.modal,
-        ac.signal
+        ac.signal,
+        this.nearestObjectId,
+        this.pathFromNearestObject
       )
+
       if (receiverSelection) {
         receiverSelection.fullKeyName = this.fullKeyName
 

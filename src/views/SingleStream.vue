@@ -1,47 +1,62 @@
 <template>
-  <div>
-    <v-card v-if="error" class="pa-5 mb-3" style="transition: all 0.2s">
-      <v-card-title class="subtitle-1 px-0 pt-0">
-        {{ error }} ⚠️
-        <div class="floating">
-          <v-btn
-            v-tooltip="`Remove this stream from the document`"
-            small
-            icon
-            color="red"
-            @click="remove"
-          >
-            <v-icon small>mdi-minus-circle-outline</v-icon>
-          </v-btn>
-          <v-btn
-            v-tooltip="`Open this stream in a new window`"
-            small
-            icon
-            color="primary"
-            :href="`${serverUrl}/streams/${savedStream.id}`"
-            target="_blank"
-          >
-            <v-icon small>mdi-open-in-new</v-icon>
-          </v-btn>
-        </div>
-      </v-card-title>
-      <v-card-text class="px-0">
-        <span v-if="error == 'Stream not found'">
-          The stream might have been deleted or belog to another Speckle server
-        </span>
-        <span v-if="error == 'You do not have access to this resource.'">
-          Please ask the stream owner for access or to make it public
-        </span>
-        <br />
-        Stream Id: {{ savedStream.id }}
-      </v-card-text>
-    </v-card>
-    <div v-else-if="$apollo.queries.stream.loading" class="mx-0 mb-3">
-      <v-skeleton-loader type="article"></v-skeleton-loader>
+  <v-card v-if="error" class="pa-5 mb-3" style="transition: all 0.2s">
+    <v-card-title class="subtitle-1 px-0 pt-0">
+      {{ error }} ⚠️
+      <div class="floating">
+        <!-- <v-btn
+          v-tooltip="`Remove this stream from the document`"
+          small
+          icon
+          color="red"
+          @click="remove"
+        >
+          <v-icon small>mdi-minus-circle-outline</v-icon>
+        </v-btn> -->
+        <v-btn
+          v-tooltip="`Open this stream in a new window`"
+          small
+          icon
+          color="primary"
+          :href="`${serverUrl}/streams/${savedStream.id}`"
+          target="_blank"
+        >
+          <v-icon small>mdi-open-in-new</v-icon>
+        </v-btn>
+      </div>
+    </v-card-title>
+    <v-card-text class="px-0">
+      <span v-if="error == 'Stream not found'">
+        The stream might have been deleted or belog to another Speckle server
+      </span>
+      <span v-if="error == 'You do not have access to this resource.'">
+        Please ask the stream owner for access or to make it public
+      </span>
+      <br />
+      Stream Id: {{ savedStream.id }}
+    </v-card-text>
+  </v-card>
+  <div v-else-if="$apollo.queries.stream.loading" class="mx-0 mb-3 fill-height background-light">
+    <div class="progress-parent">
+      <v-progress-circular
+        indeterminate
+        color="primary"
+        :size="150"
+        class="fill-height"
+      ></v-progress-circular>
     </div>
-    <div v-else-if="stream">
-      <div id="viewer" class="background-light"></div>
-      <!-- <v-card id="viewer">
+  </div>
+  <div v-else-if="stream" id="viewer-parent" class="background-light">
+    <div v-if="viewerLoading" class="progress-parent">
+      <v-progress-circular
+        indeterminate
+        color="primary"
+        :size="150"
+        class="fill-height"
+      ></v-progress-circular>
+    </div>
+    <div id="viewer"></div>
+    <div id="stream-info-parent">
+      <v-card id="stream-info" class="pa-5 ma-3" style="transition: all 0.2s">
         <v-row>
           <v-col class="align-self-center">
             <div class="subtitle-1">
@@ -49,15 +64,6 @@
             </div>
 
             <div class="floating">
-              <v-btn
-                v-tooltip="`Remove this stream from the document`"
-                small
-                icon
-                color="red"
-                @click="remove"
-              >
-                <v-icon small>mdi-minus-circle-outline</v-icon>
-              </v-btn>
               <v-btn
                 v-tooltip="`Open this stream in a new window`"
                 small
@@ -71,9 +77,7 @@
 
               <v-btn
                 v-if="stream.role != 'stream:reviewer'"
-                v-tooltip="
-                  `Click to make this a ` + (savedStream.isReceiver ? `sender` : `receiver`)
-                "
+                v-tooltip="`Click to make this a ` + (isReceiver ? `sender` : `receiver`)"
                 small
                 icon
                 color="primary"
@@ -84,50 +88,6 @@
             </div>
           </v-col>
         </v-row>
-      </v-card> -->
-      <v-card id="stream-info" class="pa-5 mb-3" style="transition: all 0.2s">
-        <!-- <v-row>
-          <v-col class="align-self-center">
-            <div class="subtitle-1">
-              {{ stream.name }}
-            </div>
-
-            <div class="floating">
-              <v-btn
-                v-tooltip="`Remove this stream from the document`"
-                small
-                icon
-                color="red"
-                @click="remove"
-              >
-                <v-icon small>mdi-minus-circle-outline</v-icon>
-              </v-btn>
-              <v-btn
-                v-tooltip="`Open this stream in a new window`"
-                small
-                icon
-                color="primary"
-                :href="`${serverUrl}/streams/${stream.id}/branches/${selectedBranch.name}`"
-                target="_blank"
-              >
-                <v-icon small>mdi-open-in-new</v-icon>
-              </v-btn>
-
-              <v-btn
-                v-if="stream.role != 'stream:reviewer'"
-                v-tooltip="
-                  `Click to make this a ` + (savedStream.isReceiver ? `sender` : `receiver`)
-                "
-                small
-                icon
-                color="primary"
-                @click="swapReceiver"
-              >
-                <v-icon small>mdi-swap-horizontal</v-icon>
-              </v-btn>
-            </div>
-          </v-col>
-        </v-row> -->
         <v-row class="stream-card-select">
           <v-col cols="6" class="pa-0 align-self-center">
             <v-select
@@ -157,7 +117,7 @@
             </v-select>
           </v-col>
           <v-col cols="6" class="pa-0 align-self-start">
-            <div v-if="savedStream.isReceiver">
+            <div v-if="isReceiver">
               <v-select
                 v-if="
                   selectedBranch &&
@@ -197,12 +157,8 @@
               </div>
             </div>
             <div v-else class="caption d-inline-flex" style="width: 100%">
-              <span
-                v-if="savedStream.selection"
-                v-tooltip="savedStream.selection"
-                class="mt-2 ml-2 text-truncate"
-              >
-                {{ savedStream.selection }}
+              <span v-if="selection" v-tooltip="selection" class="mt-2 ml-2 text-truncate">
+                {{ selection }}
               </span>
               <span v-else class="mt-2 ml-2">No range set</span>
 
@@ -239,7 +195,7 @@
                       Set range
                     </v-list-item-title>
                   </v-list-item>
-                  <v-list-item v-if="savedStream.selection" @click="clearSelection">
+                  <v-list-item v-if="selection" @click="clearSelection">
                     <v-list-item-title class="caption">Clear</v-list-item-title>
                   </v-list-item>
                 </v-list>
@@ -247,7 +203,7 @@
             </div>
           </v-col>
         </v-row>
-        <v-row v-if="savedStream.isReceiver">
+        <v-row v-if="isReceiver">
           <v-col class="align-self-center">
             <v-dialog v-model="progress" persistent>
               <v-card class="pt-3">
@@ -277,7 +233,8 @@
               </template>
 
               <v-list v-if="selectedCommit" dense>
-                <v-list-item :to="`/streams/${stream.id}/commits/${selectedCommit.id}`">
+                <!-- <v-list-item :to="`/streams/${stream.id}/commits/${selectedCommit.id}`"> -->
+                <v-list-item @click="filterAndReceive">
                   <v-list-item-action class="mr-2">
                     <v-icon small>mdi-filter-variant</v-icon>
                   </v-list-item-action>
@@ -299,13 +256,7 @@
 
         <v-row v-else>
           <v-col class="align-self-center d-inline-flex">
-            <v-btn
-              color="primary"
-              small
-              :disabled="!savedStream.selection"
-              class="mt-1"
-              @click="send"
-            >
+            <v-btn color="primary" small :disabled="!selection" class="mt-1" @click="send">
               <v-img class="mr-2" width="30" height="30" src="../assets/SenderWhite@32.png" />
 
               Send
@@ -340,17 +291,38 @@
 </template>
 <script>
 import streamQuery from '../graphql/stream.gql'
-import { send, receiveLatest } from '../plugins/excel'
+import {
+  send,
+  receiveLatest,
+  getIndiciesFromRangeAddress,
+  getRangeAddressFromIndicies
+} from '../plugins/excel'
 import gql from 'graphql-tag'
 import { createClient } from '../vue-apollo'
 import { Viewer, ViewerEvent } from '@speckle/viewer'
+// import router from '../router'
 
 let ac = new AbortController()
 
 export default {
+  async beforeRouteLeave(to, from, next) {
+    // remove on selection changed event that is tied to the viewer
+    if (this.onSelectionChangedEvent) {
+      await window.Excel.run(this.onSelectionChangedEvent.context, async (context) => {
+        this.onSelectionChangedEvent.remove()
+        await context.sync()
+        this.onSelectionChangedEvent = null
+      })
+    }
+    next()
+  },
   props: {
-    savedStream: {
-      type: Object,
+    streamId: {
+      type: String,
+      default: null
+    },
+    commitId: {
+      type: String,
       default: null
     }
   },
@@ -360,7 +332,17 @@ export default {
       progress: false,
       message: '',
       viewer: null,
-      objectIds: null
+      objectIds: null,
+      selectedObjectIds: null,
+      filterViewer: true,
+      isReceiver: true,
+      selection: null,
+      hasHeaders: false,
+      selectedBranchName: null,
+      selectedCommitId: null,
+      viewerLoading: false,
+      referencedObject: null,
+      onSelectionChangedEvent: null
     }
   },
   apollo: {
@@ -370,8 +352,38 @@ export default {
       fetchPolicy: 'network-only',
       variables() {
         return {
-          id: this.savedStream.id
+          id: this.streamId
         }
+      },
+      result() {
+        const index = this.$store.state.streams.streams.findIndex((x) => x.id === this.streamId)
+        let savedStream = null
+        if (index > -1) {
+          savedStream = this.$store.state.streams.streams[index]
+          this.isReceiver = savedStream.isReceiver
+          this.selection = savedStream.selection
+          this.hasHeaders = savedStream.hasHeaders
+          this.selectedBranchName = savedStream.selectedBranchName
+          this.selectedCommitId = savedStream.selectedCommitId
+          this.receiverSelection = savedStream.receiverSelection
+        } else {
+          this.isReceiver = true
+          this.selectedBranchName = this.selectedBranch.name
+          this.selectedCommitId = this.selectedCommit.id
+        }
+
+        // if this page is reached via a link with a commit id, this set the branch and id on the card
+        if (this.commitId) {
+          this.selectedCommitId = this.commitId
+          const branch = this.stream.branches.items.find(
+            (x) => x.commits.items.findIndex((y) => y.id == this.selectedCommitId) !== -1
+          )
+          this.selectedBranchName = branch.name
+        }
+
+        this.$nextTick(function () {
+          if (this.isReceiver) this.loadViewerObjectByCommitId(this.selectedCommitId)
+        })
       },
       error(error) {
         console.log(this.error)
@@ -379,9 +391,6 @@ export default {
           .replaceAll('"', '')
           .replace('GraphQL error: ', '')
         console.log(this.error)
-      },
-      skip() {
-        return this.savedStream === null
       }
     },
     $client: createClient(),
@@ -393,7 +402,7 @@ export default {
           }
         `,
         variables() {
-          return { id: this.savedStream.id }
+          return { id: this.streamId }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -406,11 +415,11 @@ export default {
           }
         `,
         variables() {
-          return { streamId: this.savedStream.id }
+          return { streamId: this.streamId }
         },
         result(commitInfo) {
           this.$apollo.queries.stream.refetch()
-          if (this.savedStream.isReceiver)
+          if (this.isReceiver)
             this.$store.dispatch('showSnackbar', {
               message: `New commit on ${this.stream.name} @ ${commitInfo.data.commitCreated.branchName}`
             })
@@ -423,7 +432,7 @@ export default {
           }
         `,
         variables() {
-          return { id: this.savedStream.id }
+          return { id: this.streamId }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -436,7 +445,7 @@ export default {
           }
         `,
         variables() {
-          return { id: this.savedStream.id }
+          return { id: this.streamId }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -449,7 +458,7 @@ export default {
           }
         `,
         variables() {
-          return { id: this.savedStream.id }
+          return { id: this.streamId }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -462,7 +471,7 @@ export default {
           }
         `,
         variables() {
-          return { id: this.savedStream.id }
+          return { id: this.streamId }
         },
         result() {
           this.$apollo.queries.stream.refetch()
@@ -474,21 +483,29 @@ export default {
     serverUrl() {
       return this.$store.getters.serverUrl
     },
+    savedStream() {
+      return {
+        id: this.streamId,
+        isReceiver: this.isReceiver,
+        selection: this.selection,
+        hasHeaders: this.hasHeaders,
+        selectedBranchName: this.selectedBranchName,
+        selectedCommitId: this.selectedCommitId,
+        receiverSelection: this.receiverSelection
+      }
+    },
     selectedBranch: {
       get() {
         if (!this.stream || !this.stream.branches) return null
 
-        let selectedBranchName = this.savedStream.selectedBranchName
-          ? this.savedStream.selectedBranchName
-          : 'main'
+        let selectedBranchName = this.selectedBranchName ? this.selectedBranchName : 'main'
         const index = this.stream.branches.items.findIndex((x) => x.name === selectedBranchName)
         if (index > -1) return this.stream.branches.items[index]
         return this.stream.branches.items[0]
       },
       set(value) {
-        let s = { ...this.savedStream }
-        s.selectedBranchName = value.name
-        this.$store.dispatch('updateStream', s)
+        this.selectedBranchName = value.name
+        this.$store.dispatch('updateStream', this.savedStream)
       }
     },
     selectedCommit: {
@@ -496,53 +513,36 @@ export default {
         if (!this.selectedBranch || !this.selectedBranch.commits) return null
         var commit = null
         //not set or latest, return first
-        if (!this.savedStream.selectedCommitId || this.savedStream.selectedCommitId === 'latest')
+        if (!this.selectedCommitId || this.selectedCommitId === 'latest')
           commit = this.selectedBranch.commits.items[0]
         //try match by id
         else {
           const index = this.selectedBranch.commits.items.findIndex(
-            (x) => x.id === this.savedStream.selectedCommitId
+            (x) => x.id === this.selectedCommitId
           )
           if (index > -1) commit = this.selectedBranch.commits.items[index]
           else commit = this.selectedBranch.commits.items[0]
         }
-
         return commit
       },
-      async set(value) {
-        let s = { ...this.savedStream }
+      set(value) {
         const index = this.selectedBranch.commits.items.findIndex((x) => x.id === value.id)
-        s.selectedCommitId = index === 0 ? 'latest' : value.id
-
-        await this.initViewer()
-        await this.viewer?.unloadAll()
-        await this.viewer?.loadObject(
-          `${this.serverUrl}/streams/${this.stream.id}/objects/${this.selectedBranch.commits.items[index].referencedObject}`
+        this.selectedCommitId = value.id
+        this.loadViewerObjectByReferencedId(
+          this.selectedBranch.commits.items[index].referencedObject
         )
 
-        var iterator = Object.values(this.viewer.loaders).at(0).loader.getObjectIterator()
-        console.log('it', iterator)
-        this.objectIds = new Set()
-        for await (const obj of iterator) {
-          // TODO: not all visible objects have the displayValue prop (example lines)
-          if (obj.hasOwnProperty('displayValue') && obj.displayValue !== null)
-            this.objectIds.add(obj.id)
-        }
-        console.log('objectIds', this.objectIds)
-
-        this.$store.dispatch('updateStream', s)
+        this.$store.dispatch('updateStream', this.savedStream)
       }
     }
   },
-  // mounted() {
-  //   this.initViewer()
-  // },
   methods: {
     async initViewer() {
       if (this.viewer) {
         return
       }
-      var container = await document.getElementById('viewer')
+
+      var container = document.getElementById('viewer')
       var v = new Viewer(container)
       await v.init()
 
@@ -550,14 +550,14 @@ export default {
       v.on(ViewerEvent.ObjectClicked, async (data) => {
         console.log(data?.hits[0]?.object.id)
         var speckleId = data?.hits[0]?.object.id
-        if (speckleId == undefined) v.resetSelection()
+        if (speckleId == undefined) v.resetFilters()
         else {
           v.selectObjects(new Array(data?.hits[0]?.object.id))
           await window.Excel.run(async (context) => {
             var sheet = context.workbook.worksheets.getActiveWorksheet()
-            var range = sheet.getRange()
+            var range = sheet.getUsedRange()
             var found = range.findOrNullObject(speckleId, {
-              completeMatch: true, // Match the whole cell value.
+              completeMatch: false, // Match the whole cell value.
               matchCase: false, // Don't match case.
               searchDirection: window.Excel.SearchDirection.forward // Start search at the beginning of the range.
             })
@@ -566,11 +566,10 @@ export default {
             // Update the fill color
             if (found) {
               // var extendedRange = found.get
+              this.filterViewer = false
               found.getExtendedRange(window.Excel.KeyboardDirection.left, found).select()
             }
             await context.sync()
-
-            console.log(found?.address)
           })
         }
       })
@@ -578,89 +577,138 @@ export default {
       // highlight selected objects in viewer
       await window.Excel.run(async (context) => {
         var sheet = context.workbook.worksheets.getActiveWorksheet()
-        sheet.onSelectionChanged.add(this.checkModelForSelection)
+        this.onSelectionChangedEvent ??= sheet.onSelectionChanged.add(this.checkModelForSelection)
+        await context.sync()
       })
 
-      // v.setLightConfiguration({
-      //   enabled: true,
-      //   castShadow: true,
-      //   intensity: 5,
-      //   color: 0xffffff,
-      //   elevation: 1.33,
-      //   azimuth: 0.75,
-      //   radius: 0,
-      //   indirectLightIntensity: 3,
-      //   shadowcatcher: true
-      // })
-
-      // v.loadObject(
-      //   'https://latest.speckle.dev/streams/96765a5c41/objects/b5fd92623334e74a1fa2230b065ffe4d'
-      // )
-      // console.log('loaded')
+      v.setLightConfiguration({
+        enabled: true,
+        castShadow: false, // there is a bug involving the shadows so turn them off for now
+        intensity: 5,
+        color: 0xffffff,
+        elevation: 1.33,
+        azimuth: 0.75,
+        radius: 0,
+        indirectLightIntensity: 1.2,
+        shadowcatcher: true
+      })
       this.viewer = v
     },
-    async checkModelForSelection(args) {
-      console.log('shut up, prettier', args)
+    async loadViewerObjectByReferencedId(referencedObject) {
+      if (referencedObject === this.referencedObject) return
+      if (this.viewerLoading) {
+        await this.viewer?.cancelLoad(
+          `${this.serverUrl}/streams/${this.streamId}/objects/${this.referencedObject}`,
+          true
+        )
+        this.viewerLoading = false
+      }
+      this.referencedObject = referencedObject
+      await this.initViewer()
+      await this.viewer?.unloadAll()
+      this.viewerLoading = true
+
+      const APP_NAME = process.env.VUE_APP_SPECKLE_NAME
+      const TOKEN = `${APP_NAME}.AuthToken`
+      try {
+        await this.viewer?.loadObject(
+          `${this.serverUrl}/streams/${this.streamId}/objects/${referencedObject}`,
+          localStorage.getItem(TOKEN)
+        )
+      } finally {
+        if (referencedObject == this.referencedObject) this.viewerLoading = false
+      }
+    },
+    async loadViewerObjectByCommitId(commitId) {
+      const index = this.selectedBranch.commits.items.findIndex((x) => x.id === commitId)
+
+      await this.loadViewerObjectByReferencedId(
+        this.selectedBranch.commits.items[index].referencedObject
+      )
+    },
+    async checkModelForSelection() {
+      if (!this.filterViewer) {
+        this.filterViewer = true
+        return
+      }
+      let speckleIdColIndex = await this.getSpeckleIdsColIndex()
       await window.Excel.run(async (context) => {
-        // const names = context.workbook.names
-        // names.load('items')
-        // await context.sync()
-
-        // console.log('names', names.items)
-        // // Get the selected range.
-        // let range = context.workbook.getSelectedRange()
-
-        // for (var name in names.items) {
-        //   var rangeName = names.items[name].name
-        //   // if the range doesn't start with the rangeNamePrefix "speckle_", then it is user defined
-        //   if (!rangeName.startsWith(this.$store.getters.rangeNamePrefix)) continue
-
-        //   var rangeInWorkbook = names.getItem(names.items[name].name).getRange()
-        //   var intersectionRange = range.getIntersectionOrNullObject(rangeInWorkbook)
-        //   intersectionRange.load('address')
-        //   await context.sync()
-        //   console.log('arange', intersectionRange.address)
-        //   // if (range.getIntersectionOrNullObject(namedRange) != null) console.log(namedRange)
-        //   // else console.log('null')
-        // }
-        // console.log('names', names.items)
         // Get the selected range.
         let range = context.workbook.getSelectedRange()
+        range.load('address')
+        await context.sync()
+        let selectedRangeIndicies = getIndiciesFromRangeAddress(range.address)
 
-        // Specify the direction with the `KeyboardDirection` enum.
-        // let direction = window.Excel.KeyboardDirection.left
+        if (selectedRangeIndicies[0] > speckleIdColIndex) {
+          this.unisolateObjects()
+          return
+        }
 
-        // Get the active cell in the workbook.
-        let activeCell = context.workbook.getActiveCell()
-
-        // Get the top-most cell of the current used range.
-        // This method acts like the Ctrl+Up arrow key keyboard shortcut while a range is selected.
-        let extendedRange = range.getExtendedRange(window.Excel.KeyboardDirection.right, activeCell)
-        extendedRange.load('formulas')
-        // rangeEdge.format.fill.color = 'yellow'
+        let speckleIdRangeAddress = getRangeAddressFromIndicies(
+          selectedRangeIndicies[1],
+          speckleIdColIndex,
+          selectedRangeIndicies[3],
+          speckleIdColIndex
+        )
+        let speckleIdRange = context.workbook.worksheets
+          .getActiveWorksheet()
+          .getRange(speckleIdRangeAddress)
+        speckleIdRange.load('text')
         await context.sync()
 
-        var idsInViewer = new Array()
-        for (let i = 0; i < extendedRange.formulas.length; i++) {
-          for (let j = 0; j < extendedRange.formulas[i].length; j++) {
-            if (this.objectIds.has(extendedRange.formulas[i][j]))
-              idsInViewer.push(extendedRange.formulas[i][j])
+        let idsInViewer = new Array()
+        for (let i = 0; i < speckleIdRange.text?.length; i++) {
+          for (let j = 0; j < speckleIdRange.text[i].length; j++) {
+            if (speckleIdRange.text[i][j].length < 32) continue
+            let splitIDs = speckleIdRange.text[i][j].split(',')
+            for (let id = 0; id < splitIDs.length; id++) {
+              if (splitIDs[id].length == 32) idsInViewer.push(splitIDs[id])
+            }
           }
         }
 
-        if (idsInViewer.length > 0) {
-          this.viewer?.selectObjects(idsInViewer)
-          this.viewer?.zoom(idsInViewer)
-        }
+        this.unisolateObjects()
 
-        // console.log(JSON.stringify(extendedRange.formulas, null))
+        if (idsInViewer.length > 0) {
+          this.viewer?.isolateObjects(idsInViewer)
+          this.selectedObjectIds = idsInViewer
+          // this.viewer?.zoom(idsInViewer)
+        }
+      })
+    },
+    unisolateObjects() {
+      // unisolate previous objects
+      if (this.selectedObjectIds?.length > 0) {
+        this.viewer?.resetFilters()
+        this.viewer?.unIsolateObjects(this.selectedObjectIds)
+        this.selectedObjectIds = null
+      }
+    },
+    async getSpeckleIdsColIndex() {
+      return await window.Excel.run(async (context) => {
+        let sheet = context.workbook.worksheets.getActiveWorksheet()
+        let usedRange = sheet.getUsedRange()
+
+        // TODO: we may need to narrow the search field for large wbs
+        // or if we want to have more stable support for multiple tables in the same sheet
+
+        var found = usedRange.findOrNullObject('speckleIDs', {
+          completeMatch: true, // Match the whole cell value.
+          matchCase: true, // Don't match case.
+          searchDirection: window.Excel.SearchDirection.forward // Start search at the beginning of the range.
+        })
+        found.load('address')
+        await context.sync()
+
+        var idHeaderAddressIndicies = getIndiciesFromRangeAddress(found.address)
+        return idHeaderAddressIndicies[0]
       })
     },
     swapReceiver() {
-      let s = { ...this.savedStream }
-      s.isReceiver = !s.isReceiver
+      this.isReceiver = !this.isReceiver
+      if (this.isReceiver) this.loadViewerObjectByCommitId(this.selectedCommitId)
+      this.$store.dispatch('updateStream', this.savedStream)
       this.$mixpanel.track('Connector Action', { name: 'Stream Swap Receive/Send', type: 'action' })
-      this.$store.dispatch('updateStream', s)
     },
 
     async setRange(headers) {
@@ -670,31 +718,35 @@ export default {
 
         await context.sync()
 
-        let s = { ...this.savedStream }
-        s.selection = range.address
-        s.hasHeaders = headers
-        this.$store.dispatch('updateStream', s)
+        this.selection = range.address
+        this.hasHeaders = headers
+        this.$store.dispatch('updateStream', this.savedStream)
       })
     },
     clearSelection() {
-      let s = { ...this.savedStream }
-      s.selection = ''
-      this.$store.dispatch('updateStream', s)
+      this.selection = ''
+      this.$store.dispatch('updateStream', this.savedStream)
     },
 
     remove() {
       this.$mixpanel.track('Connector Action', { name: 'Stream Remove' })
-      return this.$store.dispatch('removeStream', this.savedStream.id)
+      return this.$store.dispatch('removeStream', this.streamId)
     },
     cancel() {
       ac.abort()
     },
     async send() {
+      // these values need to be set to null or the models will not load
+      // when switching back to the receive mode
+      this.viewer = null
+      this.referencedObject = null
+      this.$store.dispatch('addStream', this.savedStream)
+
       this.$mixpanel.track('Send')
       send(this.savedStream, this.stream.id, this.selectedBranch.name, this.message)
     },
     async receiveLatest() {
-      this.$mixpanel.track('Receive')
+      // this.$mixpanel.track('Receive')
       ac = new AbortController()
 
       console.log(this.savedStream.receiverSelection)
@@ -710,13 +762,12 @@ export default {
       )
       this.progress = false
     },
+    async filterAndReceive() {
+      this.$store.dispatch('addStream', this.savedStream)
+      this.$router.push(`/streams/${this.stream.id}/commits/${this.selectedCommit.id}`)
+    },
     formatCommitName(id) {
       if (this.selectedBranch.commits.items[0].id == id) {
-        // this.viewer.unloadAll()
-        // this.viewer.loadObject(
-        //   `${this.serverUrl}/streams/${this.streamId}/objects/${this.selectedCommit.referencedObject}`
-        // )
-        console.log(id)
         return 'latest'
       }
       return id
@@ -737,6 +788,39 @@ export default {
   right: 0;
   margin: 10px;
 }
+#stream-info-parent {
+  /* max-width: 600px; */
+  /* left: 50%;
+  transform: translateX(-50%); */
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  bottom: 0px;
+  display: flex;
+  justify-content: center;
+}
+#stream-info {
+  max-width: 400px;
+  margin: 15px;
+  padding: 0 !important;
+}
+#stream-info .row {
+  padding: 0px;
+  margin: 0px;
+}
+#viewer {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+#viewer-parent {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 .background-light {
   background: #8e9eab;
   background: -webkit-linear-gradient(to top right, #eeeeee, #c8e8ff) !important;
@@ -747,5 +831,20 @@ export default {
   background: #141e30;
   background: -webkit-linear-gradient(to top left, #243b55, #141e30) !important;
   background: linear-gradient(to top left, #243b55, #141e30) !important;
+}
+
+.progress-parent {
+  height: 100%;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+.v-progress-circular {
+  height: 100%;
+  display: block;
+  margin: auto;
 }
 </style>

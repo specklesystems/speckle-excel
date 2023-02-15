@@ -6,7 +6,7 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "excel": "office-addin-debugging start public/manifest.xml",
-    "excel:web": "office-addin-debugging start public/manifest.xml web --document https://teocomi-my.sharepoint.com/:x:/r/personal/teocomi_teocomi_onmicrosoft_com/_layouts/15/Doc.aspx?sourcedoc=%7Bf13c4adc-9c61-43c7-a067-25af827ec490%7D&action=default&cid=ef02a9af-1f62-4411-a373-b71b4a286bf9",
+    "excel:web": "office-addin-debugging start public/manifest.xml web --document https://skfn3-my.sharepoint.com/:x:/r/personal/connorisadmin_skfn3_onmicrosoft_com/_layouts/15/Doc.aspx?sourcedoc=%7B46999CFC-9B5A-4716-9F71-FECAEA59A6E8%7D",
     "excel:prod": "office-addin-debugging start public/manifest-prod.xml",
     "excel:web-prod": "office-addin-debugging start public/manifest-prod.xml web --document https://teocomi-my.sharepoint.com/:x:/g/personal/teocomi_teocomi_onmicrosoft_com/EdxKPPFhnMdDoGclr4J-xJAB7H6-TRJ5s5ZnXzVdrdFyUg?e=VAFmBN",
     "stop": "office-addin-debugging stop public/manifest.xml",
@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@speckle/objectloader": "^2.9.0",
+    "@speckle/viewer": "^2.11.4",
     "core-js": "^3.6.5",
     "crypto-js": "^4.1.1",
     "flat": "^5.0.2",

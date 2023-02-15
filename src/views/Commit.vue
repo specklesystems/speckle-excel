@@ -2,7 +2,7 @@
   <v-container>
     <v-row>
       <v-col class="py-2">
-        <v-btn text large color="primary" to="/">
+        <v-btn text large color="primary" :to="`/streams/${streamId}`">
           <v-icon dark>mdi-chevron-left</v-icon>
           back
         </v-btn>
@@ -47,7 +47,7 @@
           <object-speckle-viewer
             v-if="stream"
             :stream-id="stream.id"
-            :object-id="stream.commit.referencedObject"
+            :nearest-object-id="stream.commit.referencedObject"
             :value="commitObject"
             :downloadable="false"
             :expand="true"
@@ -90,6 +90,9 @@ export default {
         speckle_type: 'reference',
         referencedId: this.stream.commit.referencedObject
       }
+    },
+    streamId() {
+      return this.$route.params.streamId
     }
   }
 }

@@ -41,6 +41,8 @@
         :stream-id="streamId"
         :commit-id="commitId"
         :commit-msg="commitMsg"
+        :nearest-object-id="updatedObjectId"
+        :path-from-nearest-object="`${entry.pathFromNearestObject}`"
       ></component>
     </v-card-text>
     <filter-modal ref="modal" />
@@ -93,12 +95,22 @@ export default {
     commitMsg: {
       type: String,
       default: null
+    },
+    nearestObjectId: {
+      type: String,
+      default: null
+    },
+    pathFromNearestObject: {
+      type: String,
+      default: null
     }
   },
   data() {
     return {
       localExpand: false,
-      progress: false
+      progress: false,
+      objectEntries: null,
+      updatedObjectId: null
     }
   },
   apollo: {
@@ -111,6 +123,9 @@ export default {
           id: this.value.referencedId
         }
       },
+      result() {
+        this.objectEntries = this.getObjectEntries()
+      },
       skip() {
         return !this.localExpand
       },
@@ -120,11 +135,24 @@ export default {
       }
     }
   },
-  computed: {
-    objectEntries() {
+  mounted() {
+    this.localExpand = this.expand
+  },
+  methods: {
+    toggleLoadExpand() {
+      this.localExpand = !this.localExpand
+    },
+    cancel() {
+      ac.abort()
+    },
+    getObjectEntries() {
       if (!this.object) return []
       let entries = Object.entries(this.object.data)
       let arr = []
+      this.updatedObjectId = this.object.data.id ?? this.nearestObjectId
+      const delimiter = ':::'
+      console.log(this.updatedObjectId, delimiter)
+      console.log(this.nearestObjectId)
       for (let [key, val] of entries) {
         let name = key
         if (key.startsWith('__')) continue
@@ -138,7 +166,7 @@ export default {
             name,
             value: val,
             type: 'ObjectListViewer',
-            description: `List (${val.length} elements)`
+            pathFromNearestObject: key + delimiter
           })
         } else if (typeof val === 'object' && val !== null) {
           if (val.speckle_type && val.speckle_type === 'reference') {
@@ -171,17 +199,6 @@ export default {
         return 0
       })
       return arr
-    }
-  },
-  mounted() {
-    this.localExpand = this.expand
-  },
-  methods: {
-    toggleLoadExpand() {
-      this.localExpand = !this.localExpand
-    },
-    cancel() {
-      ac.abort()
     },
     async bake() {
       this.progress = true

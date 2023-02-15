@@ -5,32 +5,36 @@ import { MD5, enc } from 'crypto-js'
 
 const unflatten = require('flat').unflatten
 
-let ignoreEndsWithProps = ['id', 'totalChildrenCount']
+let ignoreEndsWithProps = ['totalChildrenCount', 'elements']
 
-let streamId, sheet, rowStart, colStart, arrayData, isTabularData
-let headerIndices = []
+let streamId, sheet, rowStart, colStart, arrayData, isTabularData, arrayIdData
 
 async function flattenData(item, signal) {
   if (signal.aborted) return
   if (Array.isArray(item)) {
-    for (let o of item) {
-      if (signal.aborted) return
-      await flattenSingle(o, signal)
+    let localItems = [...item]
+    const batchSize = 35
+    while (localItems.length > 0) {
+      let batch = localItems.splice(0, batchSize)
+      await Promise.all(batch.map((i) => flattenSingle(i, signal)))
     }
   } else {
     await flattenSingle(item, signal)
   }
 }
 
-async function getReferencedObject(reference, signal) {
+async function getReferencedObject(reference, signal, excludeElementsFromConstruction = true) {
   if (signal.aborted) return
+
+  let excludeProps = ['displayValue', 'displayMesh', '__closure']
+  if (excludeElementsFromConstruction) excludeProps.push('elements')
 
   let loader = await store.dispatch('getObject', {
     streamId: streamId,
     objectId: reference,
     options: {
       fullyTraverseArrays: false,
-      excludeProps: ['displayValue', 'displayMesh', '__closure', 'elements']
+      excludeProps: excludeProps
     },
     signal
   })
@@ -45,18 +49,23 @@ async function flattenSingle(item, signal) {
 
   let flat = flatten(item)
   let rowData = []
+  let rowIdData = ''
   for (const [key, value] of Object.entries(flat)) {
     if (key === null || value === null) continue
     if (ignoreEndsWithProps.findIndex((x) => key.endsWith(x)) !== -1) continue
-
+    // TODO: we don't need to capture EVERY id like I'm doing here...
+    if (key.endsWith('id')) {
+      rowIdData += value + ','
+    }
     let colIndex = arrayData[0].findIndex((x) => x === key)
     if (colIndex === -1) {
       colIndex = arrayData[0].length
       arrayData[0].push(key)
     }
-    rowData[colIndex] = value
+    rowData[colIndex] = Array.isArray(value) ? JSON.stringify(value) : value
   }
   arrayData.push(rowData)
+  arrayIdData.push(rowIdData)
 }
 
 //called if the received data does not contain objects => it's a table, a list or a single value
@@ -75,30 +84,37 @@ async function bakeArray(data, context) {
       colIndex++
     }
   }
-  //it's a list of lists aka table
+  // it's a list of lists aka table
   else {
-    let counter = 0
     let rowIndex = 0
-    for (let array of data) {
-      let colIndex = 0
-      let actualColIndex = 0
-      for (let item of array) {
-        if (headerIndices.length === 0 || headerIndices.includes(colIndex)) {
-          let valueRange = sheet.getCell(rowIndex + rowStart, actualColIndex + colStart)
-          valueRange.values = Array.isArray(item) ? JSON.stringify(item) : item
-          actualColIndex++
-          counter++
-        }
-        colIndex++
-        //sync in batches to avoid a RequestPayloadSizeLimitExceeded
-        if (counter > 5000) {
-          counter = 0
-          await context.sync()
-        }
-      }
-
-      rowIndex++
+    let batchSize = 50
+    while (rowIndex < data.length) {
+      let dataBatch = data.slice(rowIndex, rowIndex + batchSize)
+      let numRows = dataBatch.length
+      let rangeAddress = getRangeAddressFromIndicies(
+        rowStart + rowIndex,
+        colStart,
+        rowStart + rowIndex + numRows - 1,
+        colStart + data[0].length - 1
+      )
+      let valueRange = sheet.getRange(rangeAddress)
+      valueRange.values = dataBatch
+      rowIndex += numRows
+      await context.sync()
     }
+  }
+}
+
+async function addIdDataToObjectData() {
+  if (arrayData.length != arrayIdData.length) {
+    console.log('Could not attach object ids to table')
+    return
+  }
+  for (let i = 0; i < arrayData.length; i++) {
+    arrayData[i].push(arrayIdData[i])
+    // push an empty space at the end of each array because it will trim the overflow from the
+    // speckleIds in the previous column
+    arrayData[i].push(' ')
   }
 }
 
@@ -137,6 +153,108 @@ function hasObjects(data) {
   return false
 }
 
+async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal) {
+  if (!Array.isArray(data)) return data
+
+  if (data.length < 2 || !nearestObjectId) return data
+
+  const refIndex = data.findIndex((o) => o.speckle_type === 'reference')
+
+  // no referenced Ids, objects are already constructed
+  if (refIndex == -1) return data
+
+  var parent = await getReferencedObject(
+    nearestObjectId,
+    signal,
+    !pathFromNearestObj.toLowerCase().includes('elements')
+  )
+  if (signal.aborted) return data
+
+  const delimiter = ':::'
+  var pathArray = pathFromNearestObj.split(delimiter)
+  for (let i = 0; i < pathArray.length; i++) {
+    if (!pathArray[i]) continue
+    parent = parent[pathArray[i]]
+  }
+  if (
+    Array.isArray(parent) &&
+    data.length == parent.length &&
+    data[refIndex].referencedId == parent[refIndex].id
+  ) {
+    return parent
+  }
+  //TODO: add logging here. If this line is reached then I'm pretty sure I did the traversal logic wrong
+  return data
+}
+
+// this function is brought to you by chatGPT
+// it takes in an excel column index and outputs the column string
+// 0 -> A
+// 1 -> B
+// ...
+// 26 -> AA
+// 27 -> AB
+// ...
+function numberToLetters(number) {
+  const base = 26
+  let letters = ''
+  do {
+    const remainder = number % base
+    letters = String.fromCharCode(65 + remainder) + letters
+    number = Math.floor(number / base) - 1
+  } while (number >= 0)
+  return letters
+}
+
+// this function is also the intellectual property of chatGPT
+// it does the opposite of the numberToLetters function
+// A -> 0
+// B -> 1
+// ...
+// AA -> 26
+// ...
+function lettersToNumber(letters) {
+  const base = 26
+  let number = 0
+  for (let i = 0; i < letters.length; i++) {
+    const charCode = letters.charCodeAt(i) - 65 + 1
+    number = number * base + charCode
+  }
+  return number - 1
+}
+
+export function getRangeAddressFromIndicies(startRow, startCol, endRow, endCol) {
+  let range = ''
+
+  range += numberToLetters(startCol) + String(startRow + 1)
+  range += ':'
+  range += numberToLetters(endCol) + String(endRow + 1)
+
+  return range
+}
+
+export function getIndiciesFromRangeAddress(address) {
+  let parts = address.match(/[a-zA-Z]+|[0-9]+/g)
+
+  // if the sheet is part of the address, then get rid of it
+  if (parts[0] === 'Sheet') parts.splice(0, 2)
+
+  let output = []
+  for (let part of parts) {
+    let numValue = parseInt(part)
+    if (numValue) numValue -= 1
+    else numValue = lettersToNumber(part)
+    output.push(numValue)
+  }
+
+  if (output.length == 2) {
+    output[2] = output[0]
+    output[3] = output[1]
+  }
+
+  return output
+}
+
 export async function receiveLatest(
   reference,
   _streamId,
@@ -155,6 +273,14 @@ export async function receiveLatest(
       item = item[part]
     }
 
+    if (!item) {
+      store.dispatch('showSnackbar', {
+        message: 'Could not match the previous data structure',
+        color: 'error'
+      })
+      return
+    }
+
     await bake(
       item,
       _streamId,
@@ -162,6 +288,8 @@ export async function receiveLatest(
       _commitMsg,
       null,
       signal,
+      null,
+      null,
       receiverSelection.headers,
       receiverSelection.range
     )
@@ -181,6 +309,8 @@ export async function bake(
   _commitMsg,
   modal,
   signal,
+  nearestObjectId,
+  pathFromNearestObj,
   previousHeaders,
   previousRange
 ) {
@@ -209,13 +339,17 @@ export async function bake(
 
       streamId = _streamId
       arrayData = [[]]
-      headerIndices = []
+      arrayIdData = ['speckleIDs']
 
       //if the incoming data has objects we need to flatten them to an array
       //otherwise we just output it
       isTabularData = true
 
       if (signal.aborted) return
+
+      data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
+      if (signal.aborted) return
+
       if (hasObjects(data, signal)) {
         isTabularData = false
         await flattenData(data, signal)
@@ -230,6 +364,11 @@ export async function bake(
 
       if (!isTabularData && arrayData[0].length > 25) {
         //it's manual run
+        let filteredData = [[]]
+        // initialize filteredData array with empty arrays
+        for (let i = 0; i < arrayData.length; i++) {
+          filteredData[i] = []
+        }
         if (!previousHeaders && modal) {
           let headers = headerListToTree(arrayData[0], signal)
           let dialog = await modal.open(
@@ -245,19 +384,33 @@ export async function bake(
           }
           if (arrayData[0].length !== dialog.items.length) {
             selectedHeaders = dialog.items
-            //construct a list of the index of each header to include
-            for (let item of selectedHeaders) headerIndices.push(arrayData[0].indexOf(item))
+
+            for (let item of selectedHeaders) {
+              let index = arrayData[0].indexOf(item)
+              if (index === -1) continue
+
+              for (let i = 0; i < arrayData.length; i++) {
+                filteredData[i].push(arrayData[i][index])
+              }
+            }
           }
         } else if (previousHeaders) {
           for (let item of previousHeaders) {
             let index = arrayData[0].indexOf(item)
-            if (index !== -1) headerIndices.push(index)
+            if (index === -1) continue
+
+            for (let i = 0; i < arrayData.length; i++) {
+              filteredData[i].push(arrayData[i][index])
+            }
           }
         }
+
+        arrayData = filteredData
       }
 
       if (signal.aborted) return
 
+      addIdDataToObjectData()
       await bakeArray(arrayData, context)
       await context.sync()
 

@@ -12,11 +12,6 @@ const routes = [
     component: () => import('../views/Streams.vue')
   },
   {
-    path: '/add',
-    name: 'add',
-    component: () => import('../views/Add.vue')
-  },
-  {
     path: '/streams/:streamId/commits/:commitId',
     name: 'commit',
     meta: {
@@ -25,9 +20,23 @@ const routes = [
     component: () => import('../views/Commit.vue')
   },
   {
+    path: '/streams/:streamId/:commitId?',
+    name: 'stream',
+    meta: {
+      title: 'Stream | Speckle'
+    },
+    component: () => import('../views/SingleStream.vue'),
+    props: true
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('../views/Login.vue')
+  },
+  {
+    path: '/singleStream',
+    name: 'singleStream',
+    component: () => import('../views/SingleStream.vue')
   },
   {
     path: '/redirect',
