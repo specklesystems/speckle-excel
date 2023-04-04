@@ -209,7 +209,7 @@ export default new Vuex.Store({
           variables: {
             object: {
               streamId: streamId,
-              objects: [{ data: object, speckle_type: 'Base' }]
+              objects: [object]
             }
           }
         })

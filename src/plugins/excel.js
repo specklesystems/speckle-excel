@@ -2,7 +2,7 @@
 import flatten from 'flat'
 import store from '../store/index.js'
 import { MD5, enc } from 'crypto-js'
-import { checkForSingleDataTable } from './dataTable.js'
+import { checkIfReceivingDataTable } from './dataTable.js'
 
 const unflatten = require('flat').unflatten
 
@@ -356,7 +356,8 @@ export async function bake(
       data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
 
       // check for specific conversions
-      checkForSingleDataTable(data, arrayData)
+      checkIfReceivingDataTable(data, arrayData)
+
       if (signal.aborted) return
 
       if (arrayData == [[]]) {
@@ -492,6 +493,8 @@ export async function send(savedStream, streamId, branchName, message) {
           data.push(rowArray)
         }
       }
+
+      data = { data: data, speckle_type: 'Base' }
 
       await store.dispatch('createCommit', {
         object: data,
