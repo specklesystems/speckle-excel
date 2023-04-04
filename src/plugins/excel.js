@@ -2,6 +2,7 @@
 import flatten from 'flat'
 import store from '../store/index.js'
 import { MD5, enc } from 'crypto-js'
+import { checkForSingleDataTable } from './dataTable.js'
 
 const unflatten = require('flat').unflatten
 
@@ -154,9 +155,14 @@ function hasObjects(data) {
 }
 
 async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal) {
-  if (!Array.isArray(data)) return data
+  if (!Array.isArray(data)) {
+    if (data.speckle_type == 'reference') {
+      return await getReferencedObject(data.referencedId, signal)
+    }
+    return data
+  }
 
-  if (data.length < 2 || !nearestObjectId) return data
+  if (!nearestObjectId) return data
 
   const refIndex = data.findIndex((o) => o.speckle_type === 'reference')
 
@@ -348,44 +354,58 @@ export async function bake(
       if (signal.aborted) return
 
       data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
+
+      // check for specific conversions
+      checkForSingleDataTable(data, arrayData)
       if (signal.aborted) return
 
-      if (hasObjects(data, signal)) {
-        isTabularData = false
-        await flattenData(data, signal)
-        //transpose 2d array, sort alphabetically, then transpose again
-        //this helps ensure the order of the baked columns is the same across streams
-        arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
-        arrayData = arrayData.sort((a, b) => (a[0] > b[0] ? 1 : -1))
-        arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
-      } else arrayData = data
+      if (arrayData == [[]]) {
+        if (hasObjects(data, signal)) {
+          isTabularData = false
+          await flattenData(data, signal)
+          //transpose 2d array, sort alphabetically, then transpose again
+          //this helps ensure the order of the baked columns is the same across streams
+          arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
+          arrayData = arrayData.sort((a, b) => (a[0] > b[0] ? 1 : -1))
+          arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
+        } else arrayData = data
 
-      if (signal.aborted) return
+        if (signal.aborted) return
 
-      if (!isTabularData && arrayData[0].length > 25) {
-        //it's manual run
-        let filteredData = [[]]
-        // initialize filteredData array with empty arrays
-        for (let i = 0; i < arrayData.length; i++) {
-          filteredData[i] = []
-        }
-        if (!previousHeaders && modal) {
-          let headers = headerListToTree(arrayData[0], signal)
-          let dialog = await modal.open(
-            headers,
-            `You are about to receive ${arrayData[0].length} columns and ${arrayData.length} rows, you can filter them below.`
-          )
-          console.log(dialog)
-          if (!dialog.result) {
-            store.dispatch('showSnackbar', {
-              message: 'Operation cancelled'
-            })
-            return
+        if (!isTabularData && arrayData[0].length > 25) {
+          //it's manual run
+          let filteredData = [[]]
+          // initialize filteredData array with empty arrays
+          for (let i = 0; i < arrayData.length; i++) {
+            filteredData[i] = []
           }
-          if (arrayData[0].length !== dialog.items.length) {
-            selectedHeaders = dialog.items
+          if (!previousHeaders && modal) {
+            let headers = headerListToTree(arrayData[0], signal)
+            let dialog = await modal.open(
+              headers,
+              `You are about to receive ${arrayData[0].length} columns and ${arrayData.length} rows, you can filter them below.`
+            )
+            console.log(dialog)
+            if (!dialog.result) {
+              store.dispatch('showSnackbar', {
+                message: 'Operation cancelled'
+              })
+              return
+            }
+            if (arrayData[0].length !== dialog.items.length) {
+              selectedHeaders = dialog.items
 
-            for (let item of selectedHeaders) {
+              for (let item of selectedHeaders) {
+                let index = arrayData[0].indexOf(item)
+                if (index === -1) continue
+
+                for (let i = 0; i < arrayData.length; i++) {
+                  filteredData[i].push(arrayData[i][index])
+                }
+              }
+            }
+          } else if (previousHeaders) {
+            for (let item of previousHeaders) {
               let index = arrayData[0].indexOf(item)
               if (index === -1) continue
 
@@ -394,23 +414,15 @@ export async function bake(
               }
             }
           }
-        } else if (previousHeaders) {
-          for (let item of previousHeaders) {
-            let index = arrayData[0].indexOf(item)
-            if (index === -1) continue
 
-            for (let i = 0; i < arrayData.length; i++) {
-              filteredData[i].push(arrayData[i][index])
-            }
-          }
+          arrayData = filteredData
         }
 
-        arrayData = filteredData
+        if (signal.aborted) return
+
+        addIdDataToObjectData()
       }
 
-      if (signal.aborted) return
-
-      addIdDataToObjectData()
       await bakeArray(arrayData, context)
       await context.sync()
 
