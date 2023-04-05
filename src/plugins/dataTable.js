@@ -9,20 +9,24 @@ export function checkIfReceivingDataTable(item) {
 }
 
 export function formatArrayDataForTable(item, arrayData) {
-  if (item.RowCount > 0) arrayData.pop()
+  arrayData[0].push('put table metadata here eventually')
+  for (let i = 0; i < item.columnCount; i++) {
+    arrayData[0].push(JSON.stringify(item.columnMetadata[i]))
+  }
 
-  for (let i = 0; i < item.RowCount; i++) {
+  for (let i = 0; i < item.rowCount; i++) {
     let row = []
     row.push(JSON.stringify(item.rowMetadata[i]))
-    row.push(...item.Data[i])
+    row.push(...item.data[i])
     arrayData.push(row)
   }
 }
 
 export async function bakeDataTable(item, arrayData, context, sheet, rowStart, colStart) {
+  // add one to headerRowIndex because we've added the column metadata as a new first row
   let headerRowIndex = 1
   if (item.headerRowIndex) {
-    headerRowIndex = item.headerRowIndex
+    headerRowIndex = item.headerRowIndex + 1
   }
   let name = 'DataTable'
   if (item.name) {
@@ -30,7 +34,7 @@ export async function bakeDataTable(item, arrayData, context, sheet, rowStart, c
   }
   // hideRowOrColumn(sheet, colStart)
   await bakeArray(arrayData.splice(0, headerRowIndex), context)
-  await bakeTable(arrayData, context, sheet, name, rowStart + 1, colStart, headerRowIndex)
+  await bakeTable(arrayData, context, sheet, name, rowStart + headerRowIndex, colStart)
   hideRowOrColumn(sheet, colStart, rowStart)
 }
 
