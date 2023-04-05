@@ -2,7 +2,13 @@
 import flatten from 'flat'
 import store from '../store/index.js'
 import { MD5, enc } from 'crypto-js'
-import { checkIfReceivingDataTable } from './dataTable.js'
+import {
+  checkIfReceivingDataTable,
+  checkIfSendingDataTable,
+  bakeDataTable,
+  formatArrayDataForTable
+  // getDataTables
+} from './dataTable.js'
 
 const unflatten = require('flat').unflatten
 
@@ -70,7 +76,7 @@ async function flattenSingle(item, signal) {
 }
 
 //called if the received data does not contain objects => it's a table, a list or a single value
-async function bakeArray(data, context) {
+export async function bakeArray(data, context) {
   //it's a single value
   if (!Array.isArray(data)) {
     let valueRange = sheet.getCell(rowStart, colStart)
@@ -103,6 +109,63 @@ async function bakeArray(data, context) {
       rowIndex += numRows
       await context.sync()
     }
+
+    // let totalRangeAddress = getRangeAddressFromIndicies(
+    //   rowStart,
+    //   colStart,
+    //   rowStart + data.length - 1,
+    //   colStart + data[0].length - 1
+    // )
+    // let totalRange = sheet.getRange(totalRangeAddress)
+    // let namedRanges = getDataTables(sheet)
+    // let rangeNumber = 0
+    // if (namedRanges) {
+    //   const lastKeyInMap = (map) => [...map][map.size - 1][0]
+    //   rangeNumber = lastKeyInMap + 1
+    // }
+    // sheet.names.add(`${tableName}${rangeNumber}`, totalRange)
+  }
+}
+
+export async function bakeTable(data, context, sheet, name, rowStart, colStart) {
+  let rowIndex = 0
+  let batchSize = 50
+  while (rowIndex < data.length) {
+    let dataBatch = data.slice(rowIndex, rowIndex + batchSize)
+    let numRows = dataBatch.length
+    let rangeAddress = getRangeAddressFromIndicies(
+      rowStart + rowIndex,
+      colStart,
+      rowStart + rowIndex + numRows - 1,
+      colStart + data[0].length - 1
+    )
+    let valueRange = sheet.getRange(rangeAddress)
+    valueRange.values = dataBatch
+    rowIndex += numRows
+    await context.sync()
+  }
+
+  let totalRangeAddress = getRangeAddressFromIndicies(
+    rowStart,
+    colStart,
+    rowStart + data.length - 1,
+    colStart + data[0].length - 1
+  )
+
+  sheet.activate()
+  // eslint-disable-next-line no-unused-vars
+  let table = sheet.tables.add(totalRangeAddress, true)
+  // table.name = name
+  await context.sync()
+}
+
+export function hideRowOrColumn(sheet, columnIndex = -1, rowIndex = -1) {
+  if (columnIndex > -1) {
+    let columnLetter = numberToLetters(columnIndex)
+    sheet.getRange(`${columnLetter}:${columnLetter}`).columnHidden = true
+  }
+  if (rowIndex > -1) {
+    sheet.getRange(`${rowIndex + 1}:${rowIndex + 1}`).rowHidden = true
   }
 }
 
@@ -355,12 +418,12 @@ export async function bake(
 
       data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
 
-      // check for specific conversions
-      checkIfReceivingDataTable(data, arrayData)
-
       if (signal.aborted) return
-
-      if (arrayData == [[]]) {
+      // check for specific conversions
+      if (checkIfReceivingDataTable(data)) {
+        formatArrayDataForTable(data, arrayData)
+        await bakeDataTable(data, arrayData, context, sheet, rowStart, colStart)
+      } else {
         if (hasObjects(data, signal)) {
           isTabularData = false
           await flattenData(data, signal)
@@ -422,9 +485,9 @@ export async function bake(
         if (signal.aborted) return
 
         addIdDataToObjectData()
+        await bakeArray(arrayData, context)
       }
 
-      await bakeArray(arrayData, context)
       await context.sync()
 
       await store.dispatch('receiveCommit', {
@@ -468,6 +531,9 @@ export async function send(savedStream, streamId, branchName, message) {
       range.load('values')
       await context.sync()
       let values = range.values
+
+      // check for specific conversion
+      checkIfSendingDataTable(rangeAddress, values, sheet, context)
 
       let data = []
       if (savedStream.hasHeaders) {
