@@ -4,9 +4,10 @@ import store from '../store/index.js'
 import { MD5, enc } from 'crypto-js'
 import {
   checkIfReceivingDataTable,
-  checkIfSendingDataTable,
+  getDataTableContainingRange,
   bakeDataTable,
-  formatArrayDataForTable
+  formatArrayDataForTable,
+  BuildDataTableObject
   // getDataTables
 } from './dataTable.js'
 
@@ -165,7 +166,9 @@ export function hideRowOrColumn(sheet, columnIndex = -1, rowIndex = -1) {
     sheet.getRange(`${columnLetter}:${columnLetter}`).columnHidden = true
   }
   if (rowIndex > -1) {
-    sheet.getRange(`${rowIndex + 1}:${rowIndex + 1}`).rowHidden = true
+    let rowRange = sheet.getRange(`${rowIndex + 1}:${rowIndex + 1}`)
+    rowRange.rowHidden = true
+    rowRange.format.wrapText = true
   }
 }
 
@@ -520,6 +523,7 @@ export async function bake(
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 export async function send(savedStream, streamId, branchName, message) {
   try {
     await window.Excel.run(async (context) => {
@@ -532,35 +536,38 @@ export async function send(savedStream, streamId, branchName, message) {
       await context.sync()
       let values = range.values
 
-      // check for specific conversion
-      checkIfSendingDataTable(rangeAddress, values, sheet, context)
-
       let data = []
-      if (savedStream.hasHeaders) {
-        for (let row = 1; row < values.length; row++) {
-          let object = {}
-          for (let col = 0; col < values[0].length; col++) {
-            let propName = values[0][col]
-            //if (propName !== 'id' && propName.endsWith('.id')) continue
-            let propValue = values[row][col]
-            object[propName] = propValue
-          }
-          // generate a hash if none is present
-          object.id = object.id || MD5(JSON.stringify(object)).toString(enc.Hex)
-          let unlattened = unflatten(object)
-          data.push(unlattened)
-        }
+      // check for specific conversion
+      let table = await getDataTableContainingRange(range, values, sheet, context)
+      if (table) {
+        data = await BuildDataTableObject(range, values, table, sheet, context)
       } else {
-        for (let row = 0; row < values.length; row++) {
-          let rowArray = []
-          for (let col = 0; col < values[0].length; col++) {
-            rowArray.push(values[row][col])
+        if (savedStream.hasHeaders) {
+          for (let row = 1; row < values.length; row++) {
+            let object = {}
+            for (let col = 0; col < values[0].length; col++) {
+              let propName = values[0][col]
+              //if (propName !== 'id' && propName.endsWith('.id')) continue
+              let propValue = values[row][col]
+              object[propName] = propValue
+            }
+            // generate a hash if none is present
+            object.id = object.id || MD5(JSON.stringify(object)).toString(enc.Hex)
+            let unlattened = unflatten(object)
+            data.push(unlattened)
           }
-          data.push(rowArray)
+        } else {
+          for (let row = 0; row < values.length; row++) {
+            let rowArray = []
+            for (let col = 0; col < values[0].length; col++) {
+              rowArray.push(values[row][col])
+            }
+            data.push(rowArray)
+          }
         }
-      }
 
-      data = { data: data, speckle_type: 'Base' }
+        data = { data: data, speckle_type: 'Base' }
+      }
 
       await store.dispatch('createCommit', {
         object: data,
