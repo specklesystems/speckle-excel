@@ -98,6 +98,8 @@ export async function BuildDataTableObject(sendingRange, values, table, sheet, c
   let metaColIndex = await GetRowMetadataColumnIndex(table, context)
 
   let speckleTable = new DataTable()
+  speckleTable.applicationId = await GetTableApplicationId(table, context)
+
   sendingRange.load('rowIndex, columnIndex, rowCount, columnCount')
   await context.sync()
 
@@ -134,10 +136,6 @@ export async function GetColumnMetadataRowIndex(table, sheet, context) {
   tableRange.load('columnIndex, rowCount, rowIndex')
   await context.sync()
 
-  // let tableRangeAddress = tableRange.address
-  // let rangeIndicies = getIndiciesFromRangeAddress(tableRangeAddress)
-  // let firstCellRange = sheet.getRangeByIndexes(rangeIndicies[1], rangeIndicies[0], 1, 1)
-  console.log('hey')
   let bottomRowCell = sheet.getRangeByIndexes(
     tableRange.rowIndex + tableRange.rowCount - 1,
     tableRange.columnIndex,
@@ -189,6 +187,18 @@ export async function GetRowMetadataColumnIndex(table, context) {
   await context.sync()
 
   return tableRange.columnIndex
+}
+
+async function GetTableApplicationId(table, context) {
+  const headerRange = table.getHeaderRowRange()
+  headerRange.load('values')
+  await context.sync()
+
+  const tableMetadata = JSON.parse(headerRange.values[0][0])
+  if (!tableMetadata.hasOwnProperty('SpeckleTableApplicationId'))
+    throw new Error('Cannot find TableApplicationId in table header metadata')
+
+  return tableMetadata['SpeckleTableApplicationId']
 }
 
 class Base {
