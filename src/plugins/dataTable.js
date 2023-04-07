@@ -3,6 +3,21 @@ import { bakeTable, bakeArray, hideRowOrColumn, getIndiciesFromRangeAddress, sen
 export const tableName = 'SpeckleDataTable'
 
 export function checkIfReceivingDataTable(item) {
+  if (!Array.isArray(item)) {
+    return checkIfSingleDataTable(item)
+  }
+
+  if (item.length < 1) {
+    return false
+  }
+
+  //it's a flat list
+  else if (!Array.isArray(item[0])) {
+    return checkIfSingleDataTable(item[0])
+  }
+}
+
+function checkIfSingleDataTable(item) {
   if (!(item.speckle_type && item.speckle_type.split('.').at(-1) == 'DataTable')) {
     return false
   }
@@ -10,6 +25,10 @@ export function checkIfReceivingDataTable(item) {
 }
 
 export function formatArrayDataForTable(item, arrayData) {
+  // TODO: support receiving multiple tables
+  if (Array.isArray(item)) {
+    item = item[0]
+  }
   arrayData[0].push('SpeckleColumnMetadataRow')
   for (let i = 0; i < item.columnCount; i++) {
     arrayData[0].push(JSON.stringify(item.columnMetadata[i]))
@@ -33,13 +52,12 @@ export async function bakeDataTable(item, arrayData, context, sheet, rowStart, c
   if (item.name) {
     name = item.name
   }
-  // hideRowOrColumn(sheet, colStart)
   await bakeArray(arrayData.splice(0, headerRowIndex), context)
 
   // set table applicationId in the top left cell
   arrayData[0][0] = `{"SpeckleTableApplicationId":"${item.applicationId}"}`
   await bakeTable(arrayData, context, sheet, name, rowStart + headerRowIndex, colStart)
-  // hideRowOrColumn(sheet, colStart, rowStart)
+  hideRowOrColumn(sheet, colStart, rowStart)
 }
 
 export async function getDataTableContainingRange(range, values, sheet, context) {
