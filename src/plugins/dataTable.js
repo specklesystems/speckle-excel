@@ -29,6 +29,7 @@ export function formatArrayDataForTable(item, arrayData) {
   if (Array.isArray(item)) {
     item = item[0]
   }
+
   arrayData[0].push('SpeckleColumnMetadataRow')
   for (let i = 0; i < item.columnCount; i++) {
     arrayData[0].push(JSON.stringify(item.columnMetadata[i]))
@@ -43,6 +44,11 @@ export function formatArrayDataForTable(item, arrayData) {
 }
 
 export async function bakeDataTable(item, arrayData, context, sheet, rowStart, colStart) {
+  // TODO: support receiving multiple tables
+  if (Array.isArray(item)) {
+    item = item[0]
+  }
+
   // add one to headerRowIndex because we've added the column metadata as a new first row
   let headerRowIndex = 1
   if (item.headerRowIndex) {
@@ -57,6 +63,14 @@ export async function bakeDataTable(item, arrayData, context, sheet, rowStart, c
   // set table applicationId in the top left cell
   arrayData[0][0] = `{"SpeckleTableApplicationId":"${item.applicationId}"}`
   await bakeTable(arrayData, context, sheet, name, rowStart + headerRowIndex, colStart)
+  greyOutReadOnlyColumns(
+    item.columnMetadata,
+    rowStart + 1 + headerRowIndex,
+    colStart + 1,
+    arrayData.length - 1,
+    sheet,
+    context
+  )
   hideRowOrColumn(sheet, colStart, rowStart)
 }
 
@@ -109,6 +123,24 @@ async function isSpeckleDataTable(table, sheet, context) {
     return true
   }
   return false
+}
+
+async function greyOutReadOnlyColumns(
+  columnMetadata,
+  rowStartIndex,
+  colStartIndex,
+  rowCount,
+  sheet,
+  context
+) {
+  for (let i = 0; i < columnMetadata.length; i++) {
+    if (columnMetadata[i].IsReadOnly) {
+      let range = sheet.getRangeByIndexes(rowStartIndex, colStartIndex + i, rowCount, 1)
+      range.format.fill.color = '#AEAAAA'
+    }
+  }
+
+  await context.sync()
 }
 
 export async function BuildDataTableObject(sendingRange, values, table, sheet, context) {
