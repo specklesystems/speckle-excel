@@ -58,6 +58,7 @@ export async function bakeDataTable(item, arrayData, context, sheet, rowStart, c
   if (item.name) {
     name = item.name
   }
+  hideRowOrColumn(sheet, colStart, rowStart)
   await bakeArray(arrayData.splice(0, headerRowIndex), context)
 
   // set table applicationId in the top left cell
@@ -71,7 +72,6 @@ export async function bakeDataTable(item, arrayData, context, sheet, rowStart, c
     sheet,
     context
   )
-  hideRowOrColumn(sheet, colStart, rowStart)
 }
 
 export async function getDataTableContainingRange(range, values, sheet, context) {
