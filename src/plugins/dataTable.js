@@ -183,28 +183,16 @@ export async function BuildDataTableObject(sendingRange, values, table, sheet, c
 
 export async function GetColumnMetadataRowIndex(table, sheet, context) {
   let tableRange = table.getRange()
-  tableRange.load('columnIndex, rowCount, rowIndex')
+  tableRange.load('columnCount, columnIndex, rowCount, rowIndex')
   await context.sync()
 
-  let bottomRowCell = sheet.getRangeByIndexes(
-    tableRange.rowIndex + tableRange.rowCount - 1,
-    tableRange.columnIndex,
-    1,
-    1
-  )
-
-  const extendedRange = tableRange.getExtendedRange(
-    window.Excel.KeyboardDirection.up,
-    bottomRowCell
-  )
-  extendedRange.load('columnCount, columnIndex, rowCount, rowIndex')
-  await context.sync()
+  let extendedRowIndex = Math.max(0, tableRange.rowIndex - 5)
 
   let possibleMetadataRowRange = sheet.getRangeByIndexes(
-    extendedRange.rowIndex,
-    extendedRange.columnIndex,
-    extendedRange.rowCount - tableRange.rowCount,
-    extendedRange.columnCount
+    extendedRowIndex,
+    tableRange.columnIndex,
+    tableRange.rowIndex - extendedRowIndex,
+    tableRange.columnCount
   )
 
   var found = possibleMetadataRowRange.findOrNullObject('SpeckleColumnMetadataRow', {
