@@ -56,8 +56,8 @@
     </div>
     <div id="viewer"></div>
     <div id="stream-info-parent">
-      <StreamCard
-        ref="streamInfo"
+      <StreamController
+        ref="streamController"
         :stream="stream"
         @loadByReferencedId="loadViewerObjectByReferencedId"
         @loadByCommitId="loadViewerObjectByCommitId"
@@ -66,7 +66,7 @@
   </div>
 </template>
 <script>
-import StreamCard from '../components/StreamCard.vue'
+import StreamController from '../components/StreamController.vue'
 import streamQuery from '../graphql/stream.gql'
 import {
   send,
@@ -83,7 +83,7 @@ let ac = new AbortController()
 
 export default {
   components: {
-    StreamCard
+    StreamController
   },
   async beforeRouteLeave(to, from, next) {
     // remove on selection changed event that is tied to the viewer
@@ -138,32 +138,32 @@ export default {
         let savedStream = null
         if (index > -1) {
           savedStream = this.$store.state.streams.streams[index]
-          this.$refs.streamInfo.isReceiver = savedStream.isReceiver
-          this.$refs.streamInfo.selection = savedStream.selection
-          this.$refs.streamInfo.hasHeaders = savedStream.hasHeaders
-          this.$refs.streamInfo.selectedBranchName = savedStream.selectedBranchName
-          this.$refs.streamInfo.selectedCommitId = savedStream.selectedCommitId
-          this.$refs.streamInfo.receiverSelection = savedStream.receiverSelection
+          this.$refs.streamController.isReceiver = savedStream.isReceiver
+          this.$refs.streamController.selection = savedStream.selection
+          this.$refs.streamController.hasHeaders = savedStream.hasHeaders
+          this.$refs.streamController.selectedBranchName = savedStream.selectedBranchName
+          this.$refs.streamController.selectedCommitId = savedStream.selectedCommitId
+          this.$refs.streamController.receiverSelection = savedStream.receiverSelection
         } else {
-          this.$refs.streamInfo.isReceiver = true
-          this.$refs.streamInfo.selectedBranchName = this.$refs.streamInfo.selectedBranch.name
-          this.$refs.streamInfo.selectedCommitId = this.selectedCommit.id
+          this.$refs.streamController.isReceiver = true
+          this.$refs.streamController.selectedBranchName = this.$refs.streamController.selectedBranch.name
+          this.$refs.streamController.selectedCommitId = this.selectedCommit.id
         }
 
         // if this page is reached via a link with a commit id, this set the branch and id on the card
         if (this.commitId) {
-          this.$refs.streamInfo.selectedCommitId = this.commitId
-          const branch = this.stream.branches.items.find(
-            (x) =>
-              x.commits.items.findIndex((y) => y.id == this.$refs.streamInfo.selectedCommitId) !==
-              -1
+          this.$refs.streamController.selectedCommitId = this.commitId
+          const branch = this.stream.branches.items.find((x) =>
+            x.commits.items.findIndex(
+              (y) => y.id == this.$refs.streamController.selectedCommitId - 1
+            )
           )
-          this.$refs.streamInfo.selectedBranchName = branch.name
+          this.$refs.streamController.selectedBranchName = branch.name
         }
 
         this.$nextTick(function () {
-          if (this.$refs.streamInfo.isReceiver) {
-            this.loadViewerObjectByCommitId(this.$refs.streamInfo.selectedCommitId)
+          if (this.$refs.streamController.isReceiver) {
+            this.loadViewerObjectByCommitId(this.$refs.streamController.selectedCommitId)
           }
         })
       },
@@ -271,8 +271,8 @@ export default {
         isReceiver: this.isReceiver,
         selection: this.selection,
         hasHeaders: this.hasHeaders,
-        selectedBranchName: this.$refs.streamInfo.selectedBranchName,
-        selectedCommitId: this.$refs.streamInfo.selectedCommitId,
+        selectedBranchName: this.$refs.streamController.selectedBranchName,
+        selectedCommitId: this.$refs.streamController.selectedCommitId,
         receiverSelection: this.receiverSelection
       }
     }
@@ -361,12 +361,12 @@ export default {
       }
     },
     async loadViewerObjectByCommitId(commitId) {
-      const index = this.$refs.streamInfo.selectedBranch.commits.items.findIndex(
+      const index = this.$refs.streamController.selectedBranch.commits.items.findIndex(
         (x) => x.id === commitId
       )
 
       await this.loadViewerObjectByReferencedId(
-        this.$refs.streamInfo.selectedBranch.commits.items[index].referencedObject
+        this.$refs.streamController.selectedBranch.commits.items[index].referencedObject
       )
     },
     async checkModelForSelection() {
@@ -461,7 +461,7 @@ export default {
       send(
         this.savedStream,
         this.stream.id,
-        this.$refs.streamInfo.selectedBranch.name,
+        this.$refs.streamController.selectedBranch.name,
         this.message
       )
     },
@@ -483,7 +483,7 @@ export default {
       this.progress = false
     },
     formatCommitName(id) {
-      if (this.$refs.streamInfo.selectedBranch.commits.items[0].id == id) {
+      if (this.$refs.streamController.selectedBranch.commits.items[0].id == id) {
         return 'latest'
       }
       return id
