@@ -423,16 +423,19 @@ export async function bakeSchedule(
 
       for (const [key, value] of Object.entries(flat)) {
         if (key.endsWith('speckle_type') && value.endsWith('DataTable')) {
-          schedulePaths.push(key.replace('.speckle_type', '').split('.'))
+          schedulePaths.push(
+            key.replace('.speckle_type', '').replace('speckle_type', '').split('.')
+          )
         }
       }
 
-      // await window.Excel.run(async (context) => {
       schedulePaths.forEach(async (path) => {
         try {
           let filteredData = { ...data }
           path.forEach((step) => {
-            filteredData = filteredData[step]
+            if (step) {
+              filteredData = filteredData[step]
+            }
           })
           if (signal.aborted) return
 
