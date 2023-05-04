@@ -59,8 +59,10 @@
       <StreamController
         ref="streamController"
         :stream="stream"
+        :determined-conversion="determinedConversion"
         @loadByReferencedId="loadViewerObjectByReferencedId"
         @loadByCommitId="loadViewerObjectByCommitId"
+        @clearDeterminedConversion="clearDeterminedConversion"
       />
     </div>
   </div>
@@ -120,7 +122,8 @@ export default {
       hasHeaders: false,
       viewerLoading: false,
       referencedObject: null,
-      onSelectionChangedEvent: null
+      onSelectionChangedEvent: null,
+      determinedConversion: ''
     }
   },
   apollo: {
@@ -138,34 +141,34 @@ export default {
         let savedStream = null
         if (index > -1) {
           savedStream = this.$store.state.streams.streams[index]
-          this.$refs.streamController.isReceiver = savedStream.isReceiver
-          this.$refs.streamController.selection = savedStream.selection
-          this.$refs.streamController.hasHeaders = savedStream.hasHeaders
-          this.$refs.streamController.selectedBranchName = savedStream.selectedBranchName
-          this.$refs.streamController.selectedCommitId = savedStream.selectedCommitId
-          this.$refs.streamController.receiverSelection = savedStream.receiverSelection
+          this.$nextTick(function () {
+            this.$refs.streamController.isReceiver = savedStream.isReceiver
+            this.$refs.streamController.selection = savedStream.selection
+            this.$refs.streamController.hasHeaders = savedStream.hasHeaders
+            this.$refs.streamController.selectedBranchName = savedStream.selectedBranchName
+            this.$refs.streamController.selectedCommitId = savedStream.selectedCommitId
+            this.$refs.streamController.receiverSelection = savedStream.receiverSelection
+          })
         } else {
-          this.$refs.streamController.isReceiver = true
-          this.$refs.streamController.selectedBranchName = this.$refs.streamController.selectedBranch.name
-          this.$refs.streamController.selectedCommitId = this.selectedCommit.id
+          this.$nextTick(function () {
+            this.$refs.streamController.isReceiver = true
+            this.$refs.streamController.selectedBranchName = this.$refs.streamController.selectedBranch.name
+            this.$refs.streamController.selectedCommitId = this.selectedCommit.id
+          })
         }
 
         // if this page is reached via a link with a commit id, this set the branch and id on the card
         if (this.commitId) {
-          this.$refs.streamController.selectedCommitId = this.commitId
-          const branch = this.stream.branches.items.find((x) =>
-            x.commits.items.findIndex(
-              (y) => y.id == this.$refs.streamController.selectedCommitId - 1
+          this.$nextTick(function () {
+            this.$refs.streamController.selectedCommitId = this.commitId
+            const branch = this.stream.branches.items.find((x) =>
+              x.commits.items.findIndex(
+                (y) => y.id == this.$refs.streamController.selectedCommitId - 1
+              )
             )
-          )
-          this.$refs.streamController.selectedBranchName = branch.name
+            this.$refs.streamController.selectedBranchName = branch.name
+          })
         }
-
-        this.$nextTick(function () {
-          if (this.$refs.streamController.isReceiver) {
-            this.loadViewerObjectByCommitId(this.$refs.streamController.selectedCommitId)
-          }
-        })
       },
       error(error) {
         console.log(this.error)
@@ -278,6 +281,26 @@ export default {
     }
   },
   methods: {
+    checkForDeterminedConversions() {
+      const dataTree = this.viewer.getDataTree()
+      // Get all mesh speckle objects
+      try {
+        const schedule = dataTree.findFirst((guid, obj) => {
+          return obj.speckle_type.endsWith('DataTable')
+        })
+
+        if (schedule) {
+          this.determinedConversion = 'Schedule'
+        } else {
+          this.determinedConversion = ''
+        }
+      } catch {
+        this.determinedConversion = ''
+      }
+    },
+    clearDeterminedConversion() {
+      this.determinedConversion = ''
+    },
     async initViewer() {
       if (this.viewer) {
         return
@@ -359,6 +382,7 @@ export default {
       } finally {
         if (referencedObject == this.referencedObject) this.viewerLoading = false
       }
+      this.checkForDeterminedConversions()
     },
     async loadViewerObjectByCommitId(commitId) {
       const index = this.$refs.streamController.selectedBranch.commits.items.findIndex(

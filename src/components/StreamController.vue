@@ -222,7 +222,6 @@
 </template>
 <script>
 import { send, receiveLatest, bakeSchedule } from '../plugins/excel'
-import flatten from 'flat'
 import { getReferencedObject } from '../plugins/excel'
 
 let ac = new AbortController()
@@ -231,6 +230,10 @@ export default {
   props: {
     stream: {
       type: Object,
+      default: null
+    },
+    determinedConversion: {
+      type: String,
       default: null
     }
   },
@@ -246,8 +249,7 @@ export default {
       isReceiver: true,
       selection: null,
       hasHeaders: false,
-      receiverSelection: null,
-      determinedConversion: ''
+      receiverSelection: null
     }
   },
   computed: {
@@ -265,6 +267,7 @@ export default {
       },
       set(value) {
         this.selectedBranchName = value.name
+        this.$emit('loadByReferencedId', this.selectedBranch.commits.items[0].referencedObject)
         this.$store.dispatch('updateStream', this.savedStream)
       }
     },
@@ -288,9 +291,7 @@ export default {
       async set(value) {
         const index = this.selectedBranch.commits.items.findIndex((x) => x.id === value.id)
         this.selectedCommitId = value.id
-        const referencedObjectId = this.selectedBranch.commits.items[index].referencedObject
-        this.$emit('loadByReferencedId', referencedObjectId)
-        this.determinedConversion = await this.checkForDeterminedConversions(referencedObjectId)
+        this.$emit('loadByReferencedId', this.selectedBranch.commits.items[index].referencedObject)
         this.$store.dispatch('updateStream', this.savedStream)
       }
     },
@@ -306,18 +307,12 @@ export default {
       }
     }
   },
+  mounted() {
+    this.$nextTick(function () {
+      this.$emit('loadByReferencedId', this.selectedCommit.referencedObject)
+    })
+  },
   methods: {
-    async checkForDeterminedConversions(referencedId) {
-      let obj = await getReferencedObject(this.stream.id, referencedId, {})
-      let flat = flatten(obj, { maxDepth: 4 })
-
-      for (const [key, value] of Object.entries(flat)) {
-        if (key.endsWith('speckle_type') && value.endsWith('DataTable')) {
-          return 'Schedule'
-        }
-      }
-      return null
-    },
     swapReceiver() {
       this.isReceiver = !this.isReceiver
       this.$emit('loadByCommitId', this.selectedCommitId)
@@ -377,7 +372,7 @@ export default {
           null // previousRange
         )
       } else {
-        this.determinedConversion = ''
+        this.$emit('clearDeterminedConversion')
       }
 
       if (this.receiverSelection) {
