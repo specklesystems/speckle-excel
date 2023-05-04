@@ -31,7 +31,12 @@ async function flattenData(item, signal) {
   }
 }
 
-async function getReferencedObject(reference, signal, excludeElementsFromConstruction = true) {
+export async function getReferencedObject(
+  streamId,
+  reference,
+  signal,
+  excludeElementsFromConstruction = true
+) {
   if (signal.aborted) return
 
   let excludeProps = ['displayValue', 'displayMesh', '__closure']
@@ -52,7 +57,7 @@ async function getReferencedObject(reference, signal, excludeElementsFromConstru
 
 async function flattenSingle(item, signal) {
   if (item.speckle_type && item.speckle_type == 'reference') {
-    item = await getReferencedObject(item.referencedId, signal)
+    item = await getReferencedObject(streamId, item.referencedId, signal)
   }
 
   let flat = flatten(item)
@@ -110,21 +115,6 @@ export async function bakeArray(data, context) {
       rowIndex += numRows
       await context.sync()
     }
-
-    // let totalRangeAddress = getRangeAddressFromIndicies(
-    //   rowStart,
-    //   colStart,
-    //   rowStart + data.length - 1,
-    //   colStart + data[0].length - 1
-    // )
-    // let totalRange = sheet.getRange(totalRangeAddress)
-    // let namedRanges = getDataTables(sheet)
-    // let rangeNumber = 0
-    // if (namedRanges) {
-    //   const lastKeyInMap = (map) => [...map][map.size - 1][0]
-    //   rangeNumber = lastKeyInMap + 1
-    // }
-    // sheet.names.add(`${tableName}${rangeNumber}`, totalRange)
   }
 }
 
@@ -223,7 +213,7 @@ function hasObjects(data) {
 async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal) {
   if (!Array.isArray(data)) {
     if (data.speckle_type == 'reference') {
-      return await getReferencedObject(data.referencedId, signal)
+      return await getReferencedObject(streamId, data.referencedId, signal)
     }
     return data
   }
@@ -236,6 +226,7 @@ async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj,
   if (refIndex == -1) return data
 
   var parent = await getReferencedObject(
+    streamId,
     nearestObjectId,
     signal,
     !pathFromNearestObj.toLowerCase().includes('elements')
@@ -338,7 +329,7 @@ export async function receiveLatest(
   try {
     //TODO: only get objs that are needed?
     streamId = _streamId
-    let item = await getReferencedObject(reference, signal)
+    let item = await getReferencedObject(streamId, reference, signal)
     let parts = receiverSelection.fullKeyName.split('.')
     //picks the sub-object on which the user previously clicked `bake`
     for (let part of parts) {
@@ -374,6 +365,117 @@ export async function receiveLatest(
     })
   }
 }
+async function getAddress(_streamId, signal, previousRange, context) {
+  let address, range
+  // await window.Excel.run(async (context) => {
+  if (previousRange) {
+    let sheetName = previousRange.split('!')[0].replace(/'/g, '')
+    let rangeAddress = previousRange.split('!')[1]
+    sheet = context.workbook.worksheets.getItem(sheetName)
+    range = sheet.getRange(rangeAddress)
+  } else {
+    range = context.workbook.getSelectedRange()
+  }
+  range.load('address, worksheet, columnIndex, rowIndex')
+  await context.sync()
+  // })
+
+  sheet = range.worksheet
+  sheet.load('items/name')
+
+  address = range.address
+  rowStart = range.rowIndex
+  colStart = range.columnIndex
+
+  streamId = _streamId
+  arrayData = [[]]
+  arrayIdData = ['speckleIDs']
+
+  //if the incoming data has objects we need to flatten them to an array
+  //otherwise we just output it
+  isTabularData = true
+
+  if (signal.aborted) return
+
+  return address
+}
+export async function bakeSchedule(
+  data,
+  _streamId,
+  _commitId,
+  _commitMsg,
+  signal,
+  nearestObjectId,
+  pathFromNearestObj,
+  previousHeaders,
+  previousRange
+) {
+  try {
+    let selectedHeaders = previousHeaders
+    let address
+    await window.Excel.run(async (context) => {
+      address = await getAddress(_streamId, signal, previousRange, context)
+      data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
+
+      let schedulePaths = []
+      let flat = flatten(data, { maxDepth: 4 })
+      console.log(flat)
+
+      for (const [key, value] of Object.entries(flat)) {
+        if (key.endsWith('speckle_type') && value.endsWith('DataTable')) {
+          schedulePaths.push(key.replace('.speckle_type', '').split('.'))
+        }
+      }
+
+      // await window.Excel.run(async (context) => {
+      schedulePaths.forEach(async (path) => {
+        try {
+          let filteredData = { ...data }
+          path.forEach((step) => {
+            filteredData = filteredData[step]
+          })
+          if (signal.aborted) return
+
+          formatArrayDataForTable(filteredData, arrayData)
+
+          if (signal.aborted) return
+          await bakeDataTable(filteredData, arrayData, context, sheet, rowStart, colStart)
+        } catch (e) {
+          console.log(e)
+        }
+      })
+
+      await context.sync()
+
+      await store.dispatch('receiveCommit', {
+        sourceApplication: 'Excel',
+        streamId: _streamId,
+        commitId: _commitId,
+        message: _commitMsg
+      })
+
+      store.dispatch('showSnackbar', {
+        message: 'Data received successfully'
+      })
+    })
+
+    let receiverSelection = { headers: selectedHeaders, range: address }
+
+    return receiverSelection
+    // eslint-disable-next-line no-unreachable
+  } catch (e) {
+    //pokemon
+    console.log(e)
+
+    let m = 'Something went wrong: ' + e
+    if (e.name !== 'AbortError') m = 'Operation cancelled'
+
+    store.dispatch('showSnackbar', {
+      message: m,
+      color: 'error'
+    })
+  }
+}
 export async function bake(
   data,
   _streamId,
@@ -387,38 +489,10 @@ export async function bake(
   previousRange
 ) {
   try {
-    let address, range
     let selectedHeaders = previousHeaders
-
+    let address
     await window.Excel.run(async (context) => {
-      if (previousRange) {
-        let sheetName = previousRange.split('!')[0].replace(/'/g, '')
-        let rangeAddress = previousRange.split('!')[1]
-        sheet = context.workbook.worksheets.getItem(sheetName)
-        range = sheet.getRange(rangeAddress)
-      } else {
-        range = context.workbook.getSelectedRange()
-      }
-      range.load('address, worksheet, columnIndex, rowIndex')
-      await context.sync()
-
-      sheet = range.worksheet
-      sheet.load('items/name')
-
-      address = range.address
-      rowStart = range.rowIndex
-      colStart = range.columnIndex
-
-      streamId = _streamId
-      arrayData = [[]]
-      arrayIdData = ['speckleIDs']
-
-      //if the incoming data has objects we need to flatten them to an array
-      //otherwise we just output it
-      isTabularData = true
-
-      if (signal.aborted) return
-
+      address = getAddress(_streamId, signal, previousRange, context)
       data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
 
       if (signal.aborted) return
