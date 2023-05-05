@@ -455,10 +455,14 @@ export async function bakeSchedule(
         }
       }
 
-      schedulePaths.forEach(async (path) => {
+      for (let i = 0; i < schedulePaths.length; i++) {
+        if (i != 0) {
+          context.workbook.worksheets.add()
+          sheet = context.workbook.worksheets.items[-1]
+        }
         try {
           let filteredData = { ...data }
-          path.forEach((step) => {
+          schedulePaths[i].forEach((step) => {
             if (step) {
               filteredData = filteredData[step]
             }
@@ -472,7 +476,7 @@ export async function bakeSchedule(
         } catch (e) {
           console.log(e)
         }
-      })
+      }
 
       await context.sync()
 
