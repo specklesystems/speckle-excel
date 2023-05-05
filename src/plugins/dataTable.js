@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-unused-vars
-import { bakeTable, bakeArray, hideRowOrColumn, getIndiciesFromRangeAddress, send } from './excel'
+import { bakeTable, bakeArray, hideRowOrColumn, removeNonAlphanumericCharacters } from './excel'
 export const tableName = 'SpeckleDataTable'
 
 export function checkIfReceivingDataTable(item) {
@@ -63,7 +63,7 @@ export async function bakeDataTable(item, arrayData, context, sheet, rowStart, c
 
   // set table applicationId in the top left cell
   arrayData[0][0] = `{"SpeckleTableApplicationId":"${item.applicationId}"}`
-  await bakeTable(arrayData, context, sheet, name, rowStart + headerRowIndex, colStart)
+  await bakeTable(arrayData, context, sheet, name, rowStart, colStart, headerRowIndex)
   greyOutReadOnlyColumns(
     item.columnMetadata,
     rowStart + 1 + headerRowIndex,
@@ -195,7 +195,11 @@ export async function GetColumnMetadataRowIndex(table, sheet, context) {
     tableRange.columnCount
   )
 
-  var found = possibleMetadataRowRange.findOrNullObject('SpeckleColumnMetadataRow', {
+  return await findMetadataRowIndex(possibleMetadataRowRange, context)
+}
+
+async function findMetadataRowIndex(range, context) {
+  var found = range.findOrNullObject('SpeckleColumnMetadataRow', {
     completeMatch: false, // Match the whole cell value.
     matchCase: true, // Don't match case.
     searchDirection: window.Excel.SearchDirection.forward // Start search at the beginning of the range.
@@ -203,7 +207,7 @@ export async function GetColumnMetadataRowIndex(table, sheet, context) {
   found.load('rowIndex')
   await context.sync()
   if (found.isNullObject) {
-    found = possibleMetadataRowRange.findOrNullObject('speckle_type', {
+    found = range.findOrNullObject('speckle_type', {
       completeMatch: false, // Match the whole cell value.
       matchCase: true, // Match case.
       searchDirection: window.Excel.SearchDirection.forward // Start search at the beginning of the range.
@@ -237,6 +241,85 @@ async function GetTableApplicationId(table, context) {
     throw new Error('Cannot find TableApplicationId in table header metadata')
 
   return tableMetadata['SpeckleTableApplicationId']
+}
+
+export async function onTableChanged(eventArgs) {
+  if (eventArgs.changeType != 'ColumnDeleted') {
+    return
+  }
+  await window.Excel.run(async (context) => {
+    const tableId = removeNonAlphanumericCharacters(eventArgs.tableId)
+    let sheet = context.workbook.worksheets.getActiveWorksheet()
+    let speckleRowMeta = sheet.names.getItemOrNullObject(`speckleRowMetadata_${tableId}`)
+    await context.sync()
+    if (speckleRowMeta.isNullObject) {
+      console.log('speckle row metadata was null')
+      return
+    }
+    let table = sheet.tables.getItem(eventArgs.tableId)
+    let tableRange = table.getRange()
+
+    let speckleRowMetaRange = speckleRowMeta.getRange()
+    speckleRowMetaRange.load('columnIndex')
+    tableRange.load('columnCount, columnIndex')
+    await context.sync()
+
+    if (tableRange.columnCount == 1 && tableRange.columnIndex == speckleRowMetaRange.columnIndex) {
+      let speckleColumnMeta = sheet.names.getItemOrNullObject(`speckleColumnMetadata_${tableId}`)
+      await deleteMetadata(speckleRowMeta, false, context)
+      await deleteMetadata(speckleColumnMeta, true, context)
+    }
+  })
+}
+export async function onTableDeleted(eventArgs) {
+  await window.Excel.run(async (context) => {
+    const tableId = removeNonAlphanumericCharacters(eventArgs.tableId)
+    let sheet = context.workbook.worksheets.getActiveWorksheet()
+    let speckleColumnMeta = sheet.names.getItemOrNullObject(`speckleColumnMetadata_${tableId}`)
+    let speckleRowMeta = sheet.names.getItemOrNullObject(`speckleRowMetadata_${tableId}`)
+    await context.sync()
+
+    // warning: must delete rowMetadata (which is actually a column) before deleting the colMetadata
+    await deleteMetadata(speckleRowMeta, false, context)
+    await deleteMetadata(speckleColumnMeta, true, context)
+  })
+}
+
+async function deleteMetadata(namedRange, isRow, context) {
+  if (namedRange.isNullObject) {
+    return
+  }
+
+  let speckleMetaRange = namedRange.getRange()
+
+  try {
+    await findMetadataRowIndex(speckleMetaRange, context)
+  } catch {
+    console.log('speckle metadata doesnt exist in this range anymore')
+    return
+  }
+
+  if (isRow) {
+    speckleMetaRange.load('rowHidden')
+    await context.sync()
+
+    if (speckleMetaRange.rowHidden) {
+      speckleMetaRange.getEntireRow().delete('Up')
+    } else {
+      speckleMetaRange.clear('Contents')
+    }
+  } else {
+    speckleMetaRange.load('columnHidden')
+    await context.sync()
+
+    if (speckleMetaRange.columnHidden) {
+      speckleMetaRange.getEntireColumn().delete('Left')
+    } else {
+      speckleMetaRange.clear('Contents')
+    }
+  }
+
+  namedRange.delete()
 }
 
 class Base {

@@ -7,8 +7,9 @@ import {
   getDataTableContainingRange,
   bakeDataTable,
   formatArrayDataForTable,
-  BuildDataTableObject
-  // getDataTables
+  BuildDataTableObject,
+  onTableChanged,
+  onTableDeleted
 } from './dataTable.js'
 
 const unflatten = require('flat').unflatten
@@ -118,16 +119,16 @@ export async function bakeArray(data, context) {
   }
 }
 
-export async function bakeTable(data, context, sheet, name, rowStart, colStart) {
+export async function bakeTable(data, context, sheet, name, rowStart, colStart, headerRowIndex) {
   let rowIndex = 0
   let batchSize = 50
   while (rowIndex < data.length) {
     let dataBatch = data.slice(rowIndex, rowIndex + batchSize)
     let numRows = dataBatch.length
     let rangeAddress = getRangeAddressFromIndicies(
-      rowStart + rowIndex,
+      rowStart + headerRowIndex + rowIndex,
       colStart,
-      rowStart + rowIndex + numRows - 1,
+      rowStart + headerRowIndex + rowIndex + numRows - 1,
       colStart + data[0].length - 1
     )
     let valueRange = sheet.getRange(rangeAddress)
@@ -137,17 +138,43 @@ export async function bakeTable(data, context, sheet, name, rowStart, colStart) 
   }
 
   let totalRangeAddress = getRangeAddressFromIndicies(
-    rowStart,
+    rowStart + headerRowIndex,
     colStart,
-    rowStart + data.length - 1,
+    rowStart + headerRowIndex + data.length - 1,
     colStart + data[0].length - 1
   )
 
   sheet.activate()
-  // eslint-disable-next-line no-unused-vars
   let table = sheet.tables.add(totalRangeAddress, true)
-  // table.name = name
+  table.load('id')
   await context.sync()
+
+  let tableId = removeNonAlphanumericCharacters(table.id)
+  let columnMetaAddress = getRangeAddressFromIndicies(
+    rowStart,
+    colStart + 1,
+    rowStart,
+    colStart + data[0].length - 1
+  )
+  let columnMetaRange = sheet.getRange(columnMetaAddress)
+  let rowMetaAddress = getRangeAddressFromIndicies(
+    rowStart,
+    colStart,
+    rowStart + headerRowIndex + rowIndex - 1,
+    colStart
+  )
+  let rowMetaRange = sheet.getRange(rowMetaAddress)
+
+  sheet.names.add(`speckleColumnMetadata_${tableId}`, columnMetaRange)
+  sheet.names.add(`speckleRowMetadata_${tableId}`, rowMetaRange)
+  context.workbook.tables.onDeleted.add(onTableDeleted)
+  context.workbook.tables.onChanged.add(onTableChanged)
+
+  await context.sync()
+}
+
+export function removeNonAlphanumericCharacters(s) {
+  return s.replace(/\W/g, '')
 }
 
 export function hideRowOrColumn(sheet, columnIndex = -1, rowIndex = -1) {
@@ -419,7 +446,6 @@ export async function bakeSchedule(
 
       let schedulePaths = []
       let flat = flatten(data, { maxDepth: 4 })
-      console.log(flat)
 
       for (const [key, value] of Object.entries(flat)) {
         if (key.endsWith('speckle_type') && value.endsWith('DataTable')) {
