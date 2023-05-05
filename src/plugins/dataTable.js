@@ -49,6 +49,23 @@ export async function bakeDataTable(item, arrayData, context, sheet, rowStart, c
     item = item[0]
   }
 
+  var tableToUpdate = await getExistingTableInLocation(context, sheet, rowStart, colStart)
+  if (tableToUpdate) {
+    let existingAppId = await getSpeckleIdFromTable(tableToUpdate, sheet, context)
+    if (existingAppId != item.applicationId) {
+      throw new Error('Trying receive a datatable where a different datatable already exists')
+    }
+
+    let indicies = await getMetadataIndex(tableToUpdate, sheet, context)
+    if (indicies[0] != -1 && indicies[1] != -1) {
+      rowStart = indicies[0]
+      colStart = indicies[1]
+
+      await cleanUpTableMetadata(tableToUpdate.id, context)
+      tableToUpdate.delete()
+    }
+  }
+
   // add one to headerRowIndex because we've added the column metadata as a new first row
   let headerRowIndex = 1
   if (item.headerRowIndex) {
@@ -59,7 +76,7 @@ export async function bakeDataTable(item, arrayData, context, sheet, rowStart, c
     name = item.name
   }
   hideRowOrColumn(sheet, colStart, rowStart)
-  await bakeArray(arrayData.splice(0, headerRowIndex), context)
+  await bakeArray(arrayData.splice(0, headerRowIndex), rowStart, colStart, context)
 
   // set table applicationId in the top left cell
   arrayData[0][0] = `{"SpeckleTableApplicationId":"${item.applicationId}"}`
@@ -74,7 +91,46 @@ export async function bakeDataTable(item, arrayData, context, sheet, rowStart, c
   )
 }
 
-export async function getDataTableContainingRange(range, values, sheet, context) {
+async function getExistingTableInLocation(context, sheet, rowStart, colStart) {
+  let range = sheet.getRangeByIndexes(rowStart, colStart, 1, 1)
+  var speckleTableContainingRange = await getDataTableContainingRange(range, sheet, context)
+  if (!speckleTableContainingRange) {
+    return null
+  }
+  return speckleTableContainingRange
+}
+
+async function getSpeckleIdFromTable(table, sheet, context) {
+  let range = table.getRange()
+  range.load('rowIndex, columnIndex')
+  await context.sync()
+
+  let firstCell = sheet.getRangeByIndexes(range.rowIndex, range.columnIndex, 1, 1)
+  firstCell.load('values')
+  await context.sync()
+
+  let appIdObj = JSON.parse(firstCell.values[0][0])
+  return appIdObj.SpeckleTableApplicationId
+}
+
+async function getMetadataIndex(table, sheet, context) {
+  table.load('id')
+  await context.sync()
+  let tableId = removeNonAlphanumericCharacters(table.id)
+  let speckleRowMeta = sheet.names.getItemOrNullObject(`speckleRowMetadata_${tableId}`)
+  await context.sync()
+  if (speckleRowMeta.isNullObject) {
+    return [-1, -1]
+  }
+
+  let speckleRowMetaRange = speckleRowMeta.getRange()
+  speckleRowMetaRange.load('columnIndex, rowIndex')
+  await context.sync()
+
+  return [speckleRowMetaRange.rowIndex, speckleRowMetaRange.columnIndex]
+}
+
+export async function getDataTableContainingRange(range, sheet, context) {
   let selectedTable = null
   sheet.tables.load('count')
   await context.sync()
@@ -97,6 +153,10 @@ export async function getDataTableContainingRange(range, values, sheet, context)
       selectedTable = sheet.tables.getItemAt(i)
       break
     }
+  }
+
+  if (selectedTable == null) {
+    return null
   }
 
   const isDataTable = await isSpeckleDataTable(selectedTable, sheet, context)
@@ -273,16 +333,20 @@ export async function onTableChanged(eventArgs) {
 }
 export async function onTableDeleted(eventArgs) {
   await window.Excel.run(async (context) => {
-    const tableId = removeNonAlphanumericCharacters(eventArgs.tableId)
-    let sheet = context.workbook.worksheets.getActiveWorksheet()
-    let speckleColumnMeta = sheet.names.getItemOrNullObject(`speckleColumnMetadata_${tableId}`)
-    let speckleRowMeta = sheet.names.getItemOrNullObject(`speckleRowMetadata_${tableId}`)
-    await context.sync()
-
-    // warning: must delete rowMetadata (which is actually a column) before deleting the colMetadata
-    await deleteMetadata(speckleRowMeta, false, context)
-    await deleteMetadata(speckleColumnMeta, true, context)
+    await cleanUpTableMetadata(eventArgs.tableId, context)
   })
+}
+
+async function cleanUpTableMetadata(originalTableId, context) {
+  const tableId = removeNonAlphanumericCharacters(originalTableId)
+  let sheet = context.workbook.worksheets.getActiveWorksheet()
+  let speckleColumnMeta = sheet.names.getItemOrNullObject(`speckleColumnMetadata_${tableId}`)
+  let speckleRowMeta = sheet.names.getItemOrNullObject(`speckleRowMetadata_${tableId}`)
+  await context.sync()
+
+  // warning: must delete rowMetadata (which is actually a column) before deleting the colMetadata
+  await deleteMetadata(speckleRowMeta, false, context)
+  await deleteMetadata(speckleColumnMeta, true, context)
 }
 
 async function deleteMetadata(namedRange, isRow, context) {

@@ -83,7 +83,7 @@ async function flattenSingle(item, signal) {
 }
 
 //called if the received data does not contain objects => it's a table, a list or a single value
-export async function bakeArray(data, context) {
+export async function bakeArray(data, rowStart, colStart, context) {
   //it's a single value
   if (!Array.isArray(data)) {
     let valueRange = sheet.getCell(rowStart, colStart)
@@ -595,7 +595,7 @@ export async function bake(
         if (signal.aborted) return
 
         addIdDataToObjectData()
-        await bakeArray(arrayData, context)
+        await bakeArray(arrayData, rowStart, colStart, context)
       }
 
       await context.sync()
@@ -645,7 +645,7 @@ export async function send(savedStream, streamId, branchName, message) {
 
       let data = []
       // check for specific conversion
-      let table = await getDataTableContainingRange(range, values, sheet, context)
+      let table = await getDataTableContainingRange(range, sheet, context)
       if (table) {
         data = await BuildDataTableObject(range, values, table, sheet, context)
       } else {
