@@ -79,7 +79,7 @@ export async function bakeDataTable(item, arrayData, context, sheet, rowStart, c
   await bakeArray(arrayData.splice(0, headerRowIndex), rowStart, colStart, context)
 
   // set table applicationId in the top left cell
-  arrayData[0][0] = `{"SpeckleTableApplicationId":"${item.applicationId}"}`
+  arrayData[0][0] = `{"id":"","speckle_type":"Objects.Organization.DataTable","applicationId":"${item.applicationId}","totalChildrenCount":0}`
   await bakeTable(arrayData, context, sheet, name, rowStart, colStart, headerRowIndex)
   greyOutReadOnlyColumns(
     item.columnMetadata,
@@ -110,7 +110,7 @@ async function getSpeckleIdFromTable(table, sheet, context) {
   await context.sync()
 
   let appIdObj = JSON.parse(firstCell.values[0][0])
-  return appIdObj.SpeckleTableApplicationId
+  return appIdObj.applicationId
 }
 
 async function getMetadataIndex(table, sheet, context) {
@@ -179,7 +179,7 @@ async function isSpeckleDataTable(table, sheet, context) {
   firstCellRange.load('values')
   await context.sync()
 
-  if (firstCellRange.values[0][0].includes('SpeckleTableApplicationId')) {
+  if (firstCellRange.values[0][0].includes('Objects.Organization.DataTable')) {
     return true
   }
   return false
@@ -297,10 +297,10 @@ async function GetTableApplicationId(table, context) {
   await context.sync()
 
   const tableMetadata = JSON.parse(headerRange.values[0][0])
-  if (!tableMetadata.hasOwnProperty('SpeckleTableApplicationId'))
+  if (!tableMetadata.hasOwnProperty('applicationId'))
     throw new Error('Cannot find TableApplicationId in table header metadata')
 
-  return tableMetadata['SpeckleTableApplicationId']
+  return tableMetadata.applicationId
 }
 
 export async function onTableChanged(eventArgs) {
