@@ -2,6 +2,15 @@
 import flatten from 'flat'
 import store from '../store/index.js'
 import { MD5, enc } from 'crypto-js'
+import {
+  checkIfReceivingDataTable,
+  getDataTableContainingRange,
+  bakeDataTable,
+  formatArrayDataForTable,
+  BuildDataTableObject,
+  onTableChanged,
+  onTableDeleted
+} from './dataTable.js'
 
 const unflatten = require('flat').unflatten
 
@@ -23,7 +32,12 @@ async function flattenData(item, signal) {
   }
 }
 
-async function getReferencedObject(reference, signal, excludeElementsFromConstruction = true) {
+export async function getReferencedObject(
+  streamId,
+  reference,
+  signal,
+  excludeElementsFromConstruction = true
+) {
   if (signal.aborted) return
 
   let excludeProps = ['displayValue', 'displayMesh', '__closure']
@@ -44,7 +58,7 @@ async function getReferencedObject(reference, signal, excludeElementsFromConstru
 
 async function flattenSingle(item, signal) {
   if (item.speckle_type && item.speckle_type == 'reference') {
-    item = await getReferencedObject(item.referencedId, signal)
+    item = await getReferencedObject(streamId, item.referencedId, signal)
   }
 
   let flat = flatten(item)
@@ -69,7 +83,7 @@ async function flattenSingle(item, signal) {
 }
 
 //called if the received data does not contain objects => it's a table, a list or a single value
-async function bakeArray(data, context) {
+export async function bakeArray(data, rowStart, colStart, context) {
   //it's a single value
   if (!Array.isArray(data)) {
     let valueRange = sheet.getCell(rowStart, colStart)
@@ -102,6 +116,76 @@ async function bakeArray(data, context) {
       rowIndex += numRows
       await context.sync()
     }
+  }
+}
+
+export async function bakeTable(data, context, sheet, name, rowStart, colStart, headerRowIndex) {
+  let rowIndex = 0
+  let batchSize = 50
+  while (rowIndex < data.length) {
+    let dataBatch = data.slice(rowIndex, rowIndex + batchSize)
+    let numRows = dataBatch.length
+    let rangeAddress = getRangeAddressFromIndicies(
+      rowStart + headerRowIndex + rowIndex,
+      colStart,
+      rowStart + headerRowIndex + rowIndex + numRows - 1,
+      colStart + data[0].length - 1
+    )
+    let valueRange = sheet.getRange(rangeAddress)
+    valueRange.values = dataBatch
+    rowIndex += numRows
+    await context.sync()
+  }
+
+  let totalRangeAddress = getRangeAddressFromIndicies(
+    rowStart + headerRowIndex,
+    colStart,
+    rowStart + headerRowIndex + data.length - 1,
+    colStart + data[0].length - 1
+  )
+
+  sheet.activate()
+  let table = sheet.tables.add(totalRangeAddress, true)
+  table.load('id')
+  await context.sync()
+
+  let tableId = removeNonAlphanumericCharacters(table.id)
+  let columnMetaAddress = getRangeAddressFromIndicies(
+    rowStart,
+    colStart + 1,
+    rowStart,
+    colStart + data[0].length - 1
+  )
+  let columnMetaRange = sheet.getRange(columnMetaAddress)
+  let rowMetaAddress = getRangeAddressFromIndicies(
+    rowStart,
+    colStart,
+    rowStart + headerRowIndex + rowIndex - 1,
+    colStart
+  )
+  let rowMetaRange = sheet.getRange(rowMetaAddress)
+
+  sheet.names.add(`speckleColumnMetadata_${tableId}`, columnMetaRange)
+  sheet.names.add(`speckleRowMetadata_${tableId}`, rowMetaRange)
+  context.workbook.tables.onDeleted.add(onTableDeleted)
+  context.workbook.tables.onChanged.add(onTableChanged)
+
+  await context.sync()
+}
+
+export function removeNonAlphanumericCharacters(s) {
+  return s.replace(/\W/g, '')
+}
+
+export function hideRowOrColumn(sheet, columnIndex = -1, rowIndex = -1) {
+  if (columnIndex > -1) {
+    let columnLetter = numberToLetters(columnIndex)
+    sheet.getRange(`${columnLetter}:${columnLetter}`).columnHidden = true
+  }
+  if (rowIndex > -1) {
+    let rowRange = sheet.getRange(`${rowIndex + 1}:${rowIndex + 1}`)
+    rowRange.rowHidden = true
+    rowRange.format.wrapText = true
   }
 }
 
@@ -154,9 +238,14 @@ function hasObjects(data) {
 }
 
 async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal) {
-  if (!Array.isArray(data)) return data
+  if (!Array.isArray(data)) {
+    if (data.speckle_type == 'reference') {
+      return await getReferencedObject(streamId, data.referencedId, signal)
+    }
+    return data
+  }
 
-  if (data.length < 2 || !nearestObjectId) return data
+  if (!nearestObjectId) return data
 
   const refIndex = data.findIndex((o) => o.speckle_type === 'reference')
 
@@ -164,6 +253,7 @@ async function constructRefObjectData(data, nearestObjectId, pathFromNearestObj,
   if (refIndex == -1) return data
 
   var parent = await getReferencedObject(
+    streamId,
     nearestObjectId,
     signal,
     !pathFromNearestObj.toLowerCase().includes('elements')
@@ -266,7 +356,7 @@ export async function receiveLatest(
   try {
     //TODO: only get objs that are needed?
     streamId = _streamId
-    let item = await getReferencedObject(reference, signal)
+    let item = await getReferencedObject(streamId, reference, signal)
     let parts = receiverSelection.fullKeyName.split('.')
     //picks the sub-object on which the user previously clicked `bake`
     for (let part of parts) {
@@ -302,6 +392,123 @@ export async function receiveLatest(
     })
   }
 }
+async function getAddress(_streamId, signal, previousRange, context) {
+  let address, range
+  // await window.Excel.run(async (context) => {
+  if (previousRange) {
+    let sheetName = previousRange.split('!')[0].replace(/'/g, '')
+    let rangeAddress = previousRange.split('!')[1]
+    sheet = context.workbook.worksheets.getItem(sheetName)
+    range = sheet.getRange(rangeAddress)
+  } else {
+    range = context.workbook.getSelectedRange()
+  }
+  range.load('address, worksheet, columnIndex, rowIndex')
+  await context.sync()
+  // })
+
+  sheet = range.worksheet
+  sheet.load('items/name')
+
+  address = range.address
+  rowStart = range.rowIndex
+  colStart = range.columnIndex
+
+  streamId = _streamId
+  arrayData = [[]]
+  arrayIdData = ['speckleIDs']
+
+  //if the incoming data has objects we need to flatten them to an array
+  //otherwise we just output it
+  isTabularData = true
+
+  if (signal.aborted) return
+
+  return address
+}
+export async function bakeSchedule(
+  data,
+  _streamId,
+  _commitId,
+  _commitMsg,
+  signal,
+  nearestObjectId,
+  pathFromNearestObj,
+  previousHeaders,
+  previousRange
+) {
+  try {
+    let selectedHeaders = previousHeaders
+    let address
+    await window.Excel.run(async (context) => {
+      address = await getAddress(_streamId, signal, previousRange, context)
+      data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
+
+      let schedulePaths = []
+      let flat = flatten(data, { maxDepth: 4 })
+
+      for (const [key, value] of Object.entries(flat)) {
+        if (key.endsWith('speckle_type') && value.endsWith('DataTable')) {
+          schedulePaths.push(
+            key.replace('.speckle_type', '').replace('speckle_type', '').split('.')
+          )
+        }
+      }
+
+      for (let i = 0; i < schedulePaths.length; i++) {
+        if (i != 0) {
+          context.workbook.worksheets.add()
+          sheet = context.workbook.worksheets.items[-1]
+        }
+        try {
+          let filteredData = { ...data }
+          schedulePaths[i].forEach((step) => {
+            if (step) {
+              filteredData = filteredData[step]
+            }
+          })
+          if (signal.aborted) return
+
+          formatArrayDataForTable(filteredData, arrayData)
+
+          if (signal.aborted) return
+          await bakeDataTable(filteredData, arrayData, context, sheet, rowStart, colStart)
+        } catch (e) {
+          console.log(e)
+        }
+      }
+
+      await context.sync()
+
+      await store.dispatch('receiveCommit', {
+        sourceApplication: 'Excel',
+        streamId: _streamId,
+        commitId: _commitId,
+        message: _commitMsg
+      })
+
+      store.dispatch('showSnackbar', {
+        message: 'Data received successfully'
+      })
+    })
+
+    let receiverSelection = { headers: selectedHeaders, range: address }
+
+    return receiverSelection
+    // eslint-disable-next-line no-unreachable
+  } catch (e) {
+    //pokemon
+    console.log(e)
+
+    let m = 'Something went wrong: ' + e
+    if (e.name !== 'AbortError') m = 'Operation cancelled'
+
+    store.dispatch('showSnackbar', {
+      message: m,
+      color: 'error'
+    })
+  }
+}
 export async function bake(
   data,
   _streamId,
@@ -315,77 +522,64 @@ export async function bake(
   previousRange
 ) {
   try {
-    let address, range
     let selectedHeaders = previousHeaders
-
+    let address
     await window.Excel.run(async (context) => {
-      if (previousRange) {
-        let sheetName = previousRange.split('!')[0].replace(/'/g, '')
-        let rangeAddress = previousRange.split('!')[1]
-        sheet = context.workbook.worksheets.getItem(sheetName)
-        range = sheet.getRange(rangeAddress)
-      } else {
-        range = context.workbook.getSelectedRange()
-      }
-      range.load('address, worksheet, columnIndex, rowIndex')
-      await context.sync()
-
-      sheet = range.worksheet
-      sheet.load('items/name')
-
-      address = range.address
-      rowStart = range.rowIndex
-      colStart = range.columnIndex
-
-      streamId = _streamId
-      arrayData = [[]]
-      arrayIdData = ['speckleIDs']
-
-      //if the incoming data has objects we need to flatten them to an array
-      //otherwise we just output it
-      isTabularData = true
-
-      if (signal.aborted) return
-
+      address = getAddress(_streamId, signal, previousRange, context)
       data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
-      if (signal.aborted) return
-
-      if (hasObjects(data, signal)) {
-        isTabularData = false
-        await flattenData(data, signal)
-        //transpose 2d array, sort alphabetically, then transpose again
-        //this helps ensure the order of the baked columns is the same across streams
-        arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
-        arrayData = arrayData.sort((a, b) => (a[0] > b[0] ? 1 : -1))
-        arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
-      } else arrayData = data
 
       if (signal.aborted) return
+      // check for specific conversions
+      if (checkIfReceivingDataTable(data)) {
+        formatArrayDataForTable(data, arrayData)
+        await bakeDataTable(data, arrayData, context, sheet, rowStart, colStart)
+      } else {
+        if (hasObjects(data, signal)) {
+          isTabularData = false
+          await flattenData(data, signal)
+          //transpose 2d array, sort alphabetically, then transpose again
+          //this helps ensure the order of the baked columns is the same across streams
+          arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
+          arrayData = arrayData.sort((a, b) => (a[0] > b[0] ? 1 : -1))
+          arrayData = arrayData[0].map((_, colIndex) => arrayData.map((row) => row[colIndex]))
+        } else arrayData = data
 
-      if (!isTabularData && arrayData[0].length > 25) {
-        //it's manual run
-        let filteredData = [[]]
-        // initialize filteredData array with empty arrays
-        for (let i = 0; i < arrayData.length; i++) {
-          filteredData[i] = []
-        }
-        if (!previousHeaders && modal) {
-          let headers = headerListToTree(arrayData[0], signal)
-          let dialog = await modal.open(
-            headers,
-            `You are about to receive ${arrayData[0].length} columns and ${arrayData.length} rows, you can filter them below.`
-          )
-          console.log(dialog)
-          if (!dialog.result) {
-            store.dispatch('showSnackbar', {
-              message: 'Operation cancelled'
-            })
-            return
+        if (signal.aborted) return
+
+        if (!isTabularData && arrayData[0].length > 25) {
+          //it's manual run
+          let filteredData = [[]]
+          // initialize filteredData array with empty arrays
+          for (let i = 0; i < arrayData.length; i++) {
+            filteredData[i] = []
           }
-          if (arrayData[0].length !== dialog.items.length) {
-            selectedHeaders = dialog.items
+          if (!previousHeaders && modal) {
+            let headers = headerListToTree(arrayData[0], signal)
+            let dialog = await modal.open(
+              headers,
+              `You are about to receive ${arrayData[0].length} columns and ${arrayData.length} rows, you can filter them below.`
+            )
+            console.log(dialog)
+            if (!dialog.result) {
+              store.dispatch('showSnackbar', {
+                message: 'Operation cancelled'
+              })
+              return
+            }
+            if (arrayData[0].length !== dialog.items.length) {
+              selectedHeaders = dialog.items
 
-            for (let item of selectedHeaders) {
+              for (let item of selectedHeaders) {
+                let index = arrayData[0].indexOf(item)
+                if (index === -1) continue
+
+                for (let i = 0; i < arrayData.length; i++) {
+                  filteredData[i].push(arrayData[i][index])
+                }
+              }
+            }
+          } else if (previousHeaders) {
+            for (let item of previousHeaders) {
               let index = arrayData[0].indexOf(item)
               if (index === -1) continue
 
@@ -394,24 +588,16 @@ export async function bake(
               }
             }
           }
-        } else if (previousHeaders) {
-          for (let item of previousHeaders) {
-            let index = arrayData[0].indexOf(item)
-            if (index === -1) continue
 
-            for (let i = 0; i < arrayData.length; i++) {
-              filteredData[i].push(arrayData[i][index])
-            }
-          }
+          arrayData = filteredData
         }
 
-        arrayData = filteredData
+        if (signal.aborted) return
+
+        addIdDataToObjectData()
+        await bakeArray(arrayData, rowStart, colStart, context)
       }
 
-      if (signal.aborted) return
-
-      addIdDataToObjectData()
-      await bakeArray(arrayData, context)
       await context.sync()
 
       await store.dispatch('receiveCommit', {
@@ -444,6 +630,7 @@ export async function bake(
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 export async function send(savedStream, streamId, branchName, message) {
   try {
     await window.Excel.run(async (context) => {
@@ -457,28 +644,36 @@ export async function send(savedStream, streamId, branchName, message) {
       let values = range.values
 
       let data = []
-      if (savedStream.hasHeaders) {
-        for (let row = 1; row < values.length; row++) {
-          let object = {}
-          for (let col = 0; col < values[0].length; col++) {
-            let propName = values[0][col]
-            //if (propName !== 'id' && propName.endsWith('.id')) continue
-            let propValue = values[row][col]
-            object[propName] = propValue
-          }
-          // generate a hash if none is present
-          object.id = object.id || MD5(JSON.stringify(object)).toString(enc.Hex)
-          let unlattened = unflatten(object)
-          data.push(unlattened)
-        }
+      // check for specific conversion
+      let table = await getDataTableContainingRange(range, sheet, context)
+      if (table) {
+        data = await BuildDataTableObject(range, values, table, sheet, context)
       } else {
-        for (let row = 0; row < values.length; row++) {
-          let rowArray = []
-          for (let col = 0; col < values[0].length; col++) {
-            rowArray.push(values[row][col])
+        if (savedStream.hasHeaders) {
+          for (let row = 1; row < values.length; row++) {
+            let object = {}
+            for (let col = 0; col < values[0].length; col++) {
+              let propName = values[0][col]
+              //if (propName !== 'id' && propName.endsWith('.id')) continue
+              let propValue = values[row][col]
+              object[propName] = propValue
+            }
+            // generate a hash if none is present
+            object.id = object.id || MD5(JSON.stringify(object)).toString(enc.Hex)
+            let unlattened = unflatten(object)
+            data.push(unlattened)
           }
-          data.push(rowArray)
+        } else {
+          for (let row = 0; row < values.length; row++) {
+            let rowArray = []
+            for (let col = 0; col < values[0].length; col++) {
+              rowArray.push(values[row][col])
+            }
+            data.push(rowArray)
+          }
         }
+
+        data = { data: data, speckle_type: 'Base' }
       }
 
       await store.dispatch('createCommit', {
