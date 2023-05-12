@@ -1,5 +1,11 @@
 // eslint-disable-next-line no-unused-vars
-import { bakeTable, bakeArray, hideRowOrColumn, removeNonAlphanumericCharacters } from './excel'
+import {
+  bakeTable,
+  bakeArray,
+  hideRowOrColumn,
+  removeNonAlphanumericCharacters,
+  getIndiciesFromRangeAddress
+} from './excel'
 export const tableName = 'SpeckleDataTable'
 
 export function checkIfReceivingDataTable(item) {
@@ -136,22 +142,34 @@ export async function getDataTableContainingRange(range, sheet, context) {
   await context.sync()
 
   for (let i = 0; i < sheet.tables.count; i++) {
-    let tableRange = sheet.tables.getItemAt(i).getRange()
-    let intersectionRange = tableRange.getIntersectionOrNullObject(range)
-    await context.sync()
-    if (intersectionRange.isNullObject) {
+    let table = sheet.tables.getItemAt(i)
+    let tableMetataIndicies = await getMetadataIndex(table, sheet, context)
+
+    if (tableMetataIndicies[0] == -1 && tableMetataIndicies[1] == -1) {
       continue
     }
 
-    range.load('columnCount, rowCount')
-    intersectionRange.load('columnCount, rowCount')
+    let tableRange = table.getRange()
+    tableRange.load('address')
+    range.load('address')
     await context.sync()
+
+    let tableRangeIndicies = getIndiciesFromRangeAddress(tableRange.address)
+    let rangeIndicies = getIndiciesFromRangeAddress(range.address)
     if (
-      intersectionRange.columnCount >= range.columnCount &&
-      intersectionRange.rowCount >= range.rowCount
+      // sorry these indicies don't cooperate very well. Get metadata index return [rowindex, colindex]
+      // while getIndiciesFromRangeAddress return indicies as excel addresses display them [colindex, rowindex, endcolindex, endRowIndex]
+      tableMetataIndicies[0] <= rangeIndicies[1] &&
+      tableMetataIndicies[1] <= rangeIndicies[0] &&
+      tableRangeIndicies[3] >= rangeIndicies[3] &&
+      tableRangeIndicies[2] >= rangeIndicies[2]
     ) {
       selectedTable = sheet.tables.getItemAt(i)
       break
+    } else {
+      console.log(
+        "Are you trying to send a data table? Make sure your selection doesn't extended beyond the table"
+      )
     }
   }
 
