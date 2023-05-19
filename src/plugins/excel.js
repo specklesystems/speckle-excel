@@ -16,6 +16,9 @@ const unflatten = require('flat').unflatten
 
 let ignoreEndsWithProps = ['totalChildrenCount', 'elements']
 
+let displayValues = ['displayValue', '@displayValue', 'displayMesh']
+let speckleTypesWithGeometry = ['Objects.Geometry']
+
 let streamId, sheet, rowStart, colStart, arrayData, isTabularData, arrayIdData
 
 async function flattenData(item, signal) {
@@ -40,7 +43,7 @@ export async function getReferencedObject(
 ) {
   if (signal.aborted) return
 
-  let excludeProps = ['displayValue', 'displayMesh', '__closure']
+  let excludeProps = ['__closure']
   if (excludeElementsFromConstruction) excludeProps.push('elements')
 
   let loader = await store.dispatch('getObject', {
@@ -67,9 +70,12 @@ async function flattenSingle(item, signal) {
   for (const [key, value] of Object.entries(flat)) {
     if (key === null || value === null) continue
     if (ignoreEndsWithProps.findIndex((x) => key.endsWith(x)) !== -1) continue
-    // TODO: we don't need to capture EVERY id like I'm doing here...
     if (key.endsWith('id')) {
-      rowIdData += value + ','
+      rowIdData += idsToBeAdded(key, value, flat)
+      continue
+    }
+    if (displayValues.some((v) => key.includes(v))) {
+      continue
     }
     let colIndex = arrayData[0].findIndex((x) => x === key)
     if (colIndex === -1) {
@@ -80,6 +86,25 @@ async function flattenSingle(item, signal) {
   }
   arrayData.push(rowData)
   arrayIdData.push(rowIdData)
+}
+
+function idsToBeAdded(key, value, flat) {
+  for (let i = 0; i < displayValues.length; i++) {
+    if (flat[key.slice(0, -2).concat(displayValues[i]).concat('.0.id')]) {
+      return value + ','
+    }
+  }
+
+  let speckleType = flat[key.slice(0, -2).concat('speckle_type')]
+  if (!speckleType) return ''
+
+  for (let i = 0; i < speckleTypesWithGeometry.length; i++) {
+    if (speckleType.startsWith(speckleTypesWithGeometry[i])) {
+      return value + ','
+    }
+  }
+
+  return ''
 }
 
 //called if the received data does not contain objects => it's a table, a list or a single value
@@ -190,10 +215,17 @@ export function hideRowOrColumn(sheet, columnIndex = -1, rowIndex = -1) {
 }
 
 async function addIdDataToObjectData() {
-  if (arrayData.length != arrayIdData.length) {
+  if (
+    arrayData.length != arrayIdData.length ||
+    arrayData.length <= 1 ||
+    !Array.isArray(arrayData[0])
+  ) {
     console.log('Could not attach object ids to table')
     return
   }
+  // if all speckleIds are empty strings then don't add the column
+  if (arrayIdData.slice(1, -1).every((val) => !val)) return
+
   for (let i = 0; i < arrayData.length; i++) {
     arrayData[i].push(arrayIdData[i])
     // push an empty space at the end of each array because it will trim the overflow from the
@@ -525,7 +557,7 @@ export async function bake(
     let selectedHeaders = previousHeaders
     let address
     await window.Excel.run(async (context) => {
-      address = getAddress(_streamId, signal, previousRange, context)
+      address = await getAddress(_streamId, signal, previousRange, context)
       data = await constructRefObjectData(data, nearestObjectId, pathFromNearestObj, signal)
 
       if (signal.aborted) return
@@ -594,7 +626,7 @@ export async function bake(
 
         if (signal.aborted) return
 
-        addIdDataToObjectData()
+        await addIdDataToObjectData()
         await bakeArray(arrayData, rowStart, colStart, context)
       }
 
