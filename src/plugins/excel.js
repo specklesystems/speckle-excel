@@ -16,7 +16,7 @@ const unflatten = require('flat').unflatten
 
 let ignoreEndsWithProps = ['totalChildrenCount', 'elements']
 
-let displayValues = ['displayValue', '@displayValue']
+let displayValues = ['displayValue', '@displayValue', 'displayMesh']
 let speckleTypesWithGeometry = ['Objects.Geometry']
 
 let streamId, sheet, rowStart, colStart, arrayData, isTabularData, arrayIdData
@@ -72,6 +72,10 @@ async function flattenSingle(item, signal) {
     if (ignoreEndsWithProps.findIndex((x) => key.endsWith(x)) !== -1) continue
     if (key.endsWith('id')) {
       rowIdData += idsToBeAdded(key, value, flat)
+      continue
+    }
+    if (displayValues.some((v) => key.includes(v))) {
+      continue
     }
     let colIndex = arrayData[0].findIndex((x) => x === key)
     if (colIndex === -1) {
@@ -219,6 +223,9 @@ async function addIdDataToObjectData() {
     console.log('Could not attach object ids to table')
     return
   }
+  // if all speckleIds are empty strings then don't add the column
+  if (arrayIdData.slice(1, -1).every((val) => !val)) return
+
   for (let i = 0; i < arrayData.length; i++) {
     arrayData[i].push(arrayIdData[i])
     // push an empty space at the end of each array because it will trim the overflow from the
