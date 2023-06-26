@@ -671,9 +671,9 @@ export async function send(savedStream, streamId, branchName, message) {
       let sheet = context.workbook.worksheets.getItem(sheetName)
 
       let range = sheet.getRange(rangeAddress)
-      range.load('values')
+      range.load('formulas')
       await context.sync()
-      let values = range.values
+      let values = range.formulas
 
       let data = []
       // check for specific conversion
