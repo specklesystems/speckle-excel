@@ -248,12 +248,17 @@ export async function BuildDataTableObject(sendingRange, values, table, sheet, c
   metaColumnRange.load('values')
   await context.sync()
 
-  for (let i = 0; i < sendingRange.columnCount; i++) {
+  var rangeColumnStart = 0
+  if (sendingRange.columnIndex == metaColIndex) {
+    rangeColumnStart = 1
+  }
+
+  for (let i = rangeColumnStart; i < sendingRange.columnCount; i++) {
     speckleTable.defineColumn(JSON.parse(metaRowRange.values[0][i]))
   }
 
   for (let i = 0; i < sendingRange.rowCount; i++) {
-    speckleTable.addRow(JSON.parse(metaColumnRange.values[i][0]), values[i])
+    speckleTable.addRow(JSON.parse(metaColumnRange.values[i][0]), values[i].slice(rangeColumnStart))
   }
 
   return speckleTable
