@@ -487,6 +487,9 @@ export async function bakeSchedule(
         }
       }
 
+      context.workbook.worksheets.load('items')
+      await context.sync()
+
       for (let i = 0; i < schedulePaths.length; i++) {
         if (i != 0) {
           context.workbook.worksheets.add()
@@ -579,12 +582,6 @@ export async function bake(
         if (signal.aborted) return
 
         if (!isTabularData && arrayData[0].length > 25) {
-          //it's manual run
-          let filteredData = [[]]
-          // initialize filteredData array with empty arrays
-          for (let i = 0; i < arrayData.length; i++) {
-            filteredData[i] = []
-          }
           if (!previousHeaders && modal) {
             let headers = headerListToTree(arrayData[0], signal)
             let dialog = await modal.open(
@@ -598,30 +595,12 @@ export async function bake(
               })
               return
             }
-            if (arrayData[0].length !== dialog.items.length) {
-              selectedHeaders = dialog.items
-
-              for (let item of selectedHeaders) {
-                let index = arrayData[0].indexOf(item)
-                if (index === -1) continue
-
-                for (let i = 0; i < arrayData.length; i++) {
-                  filteredData[i].push(arrayData[i][index])
-                }
-              }
-            }
+            selectedHeaders = filterArrayData(dialog.items, arrayData)
           } else if (previousHeaders) {
-            for (let item of previousHeaders) {
-              let index = arrayData[0].indexOf(item)
-              if (index === -1) continue
-
-              for (let i = 0; i < arrayData.length; i++) {
-                filteredData[i].push(arrayData[i][index])
-              }
-            }
+            selectedHeaders = filterArrayData(previousHeaders, arrayData)
           }
 
-          arrayData = filteredData
+          console.log(arrayData)
         }
 
         if (signal.aborted) return
@@ -660,6 +639,26 @@ export async function bake(
       color: 'error'
     })
   }
+}
+
+function filterArrayData(headers, allData) {
+  if (allData[0].length == headers.length) return allData
+
+  let filteredData = [[]]
+  // initialize filteredData array with empty arrays
+  for (let i = 0; i < allData.length; i++) {
+    filteredData[i] = []
+  }
+
+  for (let item of headers) {
+    let index = allData[0].indexOf(item)
+    if (index === -1) continue
+
+    for (let i = 0; i < allData.length; i++) {
+      filteredData[i].push(allData[i][index])
+    }
+  }
+  return filteredData
 }
 
 // eslint-disable-next-line no-unused-vars
