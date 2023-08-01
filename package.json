@@ -14,6 +14,7 @@
     "validate": "office-toolbox validate -m public/manifest.xml"
   },
   "dependencies": {
+    "@mdi/font": "^7.2.96",
     "@speckle/objectloader": "^2.9.0",
     "@speckle/viewer": "^2.14.7",
     "core-js": "^3.6.5",
