@@ -14,30 +14,6 @@
           <v-card>
             <v-card-title class="text-h5">Create a New Stream</v-card-title>
             <v-container class="px-6" pb-0>
-              <!--
-              <v-menu offset-y class="pb-3">
-                <template #activator="{ on, attrs }">
-                  <v-chip v-if="accounts" small v-bind="attrs" v-on="on">
-                    <v-icon small class="mr-1 float-left">mdi-account</v-icon>
-                    {{ accountToCreateStream === null ?
-                      activeAccount().userInfo.email + activeAccount().serverInfo.url:
-                      accountToCreateStream.userInfo.email + accountToCreateStream.serverInfo.url }}
-                  </v-chip>
-                </template>
-                <v-list dense>
-                  <v-list-item
-                      v-for="(account, index) in accounts"
-                      :key="index"
-                      link
-                      @click="switchAccountToCreateStream(account)"
-                  >
-                    <v-list-item-title class="text-caption font-weight-regular">
-                      {{ account.userInfo.email }} ({{ account.serverInfo.url }})
-                    </v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
-              -->
               <v-text-field
                 v-model="streamName"
                 xxxclass="small-text-field"
@@ -108,9 +84,7 @@
 
 <script>
 import gql from 'graphql-tag'
-import userQuery from '@/graphql/userById.gql'
 import { StreamWrapper } from '@/utils/streamWrapper'
-import { createClient } from '@/vue-apollo'
 
 export default {
   name: 'CreateStreamDialog',
@@ -143,17 +117,7 @@ export default {
       return this.$store.getters.isAuthenticated
     }
   },
-  apollo: {
-    $client: createClient(),
-    user: {
-      query: userQuery
-    }
-  },
   methods: {
-    refresh() {
-      this.$apollo.queries.user.refetch()
-      //   bus.$emit('refresh-streams')
-    },
     async getStream() {
       try {
         const streamWrapper = new StreamWrapper(
