@@ -1,5 +1,5 @@
 <template>
-  <div style="display: inline-block">
+  <div v-if="otherUser && otherUser.name" style="display: inline-block">
     <v-menu v-if="loggedIn" offset-x open-on-hover>
       <template #activator="{ on, attrs }">
         <v-avatar class="ma-1" color="grey lighten-3" :size="size" v-bind="attrs" v-on="on">
@@ -14,12 +14,14 @@
             <v-img v-else :src="`https://robohash.org/` + id + `.png?size=40x40`" />
           </v-avatar>
           <br />
-          <b>{{ user.name }}</b>
+          <b>{{ otherUser.name }}</b>
           <v-divider class="ma-4"></v-divider>
-          {{ user.company }}
+          {{ otherUser.company }}
           <br />
           {{
-            user.bio ? user.bio : 'This user prefers to keep an air of mystery around themselves.'
+            otherUser.bio
+              ? otherUser.bio
+              : 'This user prefers to keep an air of mystery around themselves.'
           }}
           <br />
         </v-card-text>
@@ -58,7 +60,7 @@ export default {
   },
   apollo: {
     $client: createClient(),
-    user: {
+    otherUser: {
       query: userQuery,
       variables() {
         return {
@@ -67,6 +69,9 @@ export default {
       },
       skip() {
         return !this.loggedIn
+      },
+      error(error) {
+        console.log('Could not get user', error)
       }
     }
   }
