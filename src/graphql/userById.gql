@@ -1,7 +1,6 @@
-query User($id: String!) {
-  user(id: $id) {
+query LimitedUser($id: String!) {
+  otherUser(id: $id) {
     id
-    email
     name
     bio
     company
