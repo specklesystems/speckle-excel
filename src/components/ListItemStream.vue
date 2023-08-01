@@ -47,14 +47,16 @@
       </v-col>
       <v-col cols="12" sm="4" class="text-sm-center text-md-right align-self-center">
         <div>
-          <user-avatar
-            v-for="user in collaboratorsSlice"
-            :id="user.id"
-            :key="user.id"
-            :avatar="user.avatar"
-            :size="30"
-            :name="user.name"
-          />
+          <span v-for="user in collaboratorsSlice" :key="user.id">
+            <user-avatar
+              v-if="user.id"
+              :id="user.id"
+              :avatar="user.avatar"
+              :size="30"
+              :name="user.name"
+            />
+          </span>
+
           <div v-if="stream.collaborators.length > collaboratorsSlice.length" class="d-inline">
             <v-avatar class="ma-1 grey--text text--darken-2" color="grey lighten-3" size="30">
               <b>+{{ stream.collaborators.length - collaboratorsSlice.length }}</b>
@@ -80,22 +82,22 @@ export default {
   },
   computed: {
     collaboratorsSlice() {
-      let limit = 18
+      let limit = 6
       switch (this.$vuetify.breakpoint.name) {
         case 'xs':
-          limit = 10
+          limit = 5
           break
         case 'sm':
-          limit = 9
+          limit = 5
           break
         case 'md':
-          limit = 8
+          limit = 4
           break
         case 'lg':
-          limit = 12
+          limit = 6
           break
         case 'xl':
-          limit = 18
+          limit = 6
           break
       }
 
