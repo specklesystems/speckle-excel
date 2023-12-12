@@ -214,7 +214,7 @@ export function hideRowOrColumn(sheet, columnIndex = -1, rowIndex = -1) {
   }
 }
 
-async function addIdDataToObjectData() {
+async function addIdDataToObjectData(arrayData) {
   if (
     arrayData.length != arrayIdData.length ||
     arrayData.length <= 1 ||
@@ -598,15 +598,15 @@ export async function bake(
             selectedHeaders = filterArrayData(dialog.items, arrayData)
           } else if (previousHeaders) {
             selectedHeaders = filterArrayData(previousHeaders, arrayData)
+          } else {
+            selectedHeaders = arrayData
           }
-
-          console.log(arrayData)
         }
 
         if (signal.aborted) return
 
-        await addIdDataToObjectData()
-        await bakeArray(arrayData, rowStart, colStart, context)
+        await addIdDataToObjectData(selectedHeaders)
+        await bakeArray(selectedHeaders, rowStart, colStart, context)
       }
 
       await context.sync()
