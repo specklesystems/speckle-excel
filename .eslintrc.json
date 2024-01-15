@@ -1,4 +1,5 @@
 {
+  "root": true,
   "env": {
     "browser": true,
     "es2021": true,
@@ -19,7 +20,7 @@
     "sourceType": "module",
     "parser": "@typescript-eslint/parser"
   },
-  "plugins": ["vue", "prettier", "@typescript-eslint"],
+  "plugins": ["vue", "prettier"],
   "rules": {
     "arrow-spacing": [
       2,

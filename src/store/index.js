@@ -195,8 +195,6 @@ export default new Vuex.Store({
       }
     },
     async createCommit(context, { streamId, branchName, message, object }) {
-      // let query = `mutation objectCreate ($object: ObjectCreateInput!) {objectCreate(objectInput: $object)}`
-
       let serverUrl = localStorage.getItem('serverUrl')
       let token = localStorage.getItem(TOKEN)
 
@@ -204,49 +202,7 @@ export default new Vuex.Store({
       const serializer = new BaseObjectSerializer([serverTransport])
       const serialized = await serializer.SerializeBase(object)
 
-      console.log(message)
-      await serverTransport.CreateCommit(branchName, serialized.id, null)
-
-      // let response = await fetch(`${serverUrl}/graphql`, {
-      //   method: 'POST',
-      //   headers: {
-      //     Authorization: 'Bearer ' + token,
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     query: query,
-      //     variables: {
-      //       object: {
-      //         streamId: streamId,
-      //         objects: [object]
-      //       }
-      //     }
-      //   })
-      // })
-      // let data = await response.json()
-      // let objectId = data.data.objectCreate[0]
-
-      // query = `mutation commitCreate($myCommit: CommitCreateInput!){ commitCreate(commit: $myCommit)}`
-
-      // response = await fetch(`${serverUrl}/graphql`, {
-      //   method: 'POST',
-      //   headers: {
-      //     Authorization: 'Bearer ' + token,
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     query: query,
-      //     variables: {
-      //       myCommit: {
-      //         streamId: streamId,
-      //         branchName: branchName,
-      //         objectId: objectId,
-      //         message: message ? message : 'Data from Excel',
-      //         sourceApplication: 'excel'
-      //       }
-      //     }
-      //   })
-      // })
+      await serverTransport.CreateCommit(branchName, serialized.id, message)
     },
     async receiveCommit(context, { sourceApplication, streamId, commitId, message }) {
       let query = `mutation objectReceive ($myInput:CommitReceivedInput!) {commitReceive(input:$myInput)}`
