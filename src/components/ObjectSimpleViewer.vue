@@ -55,8 +55,7 @@ export default {
   },
   props: {
     value: {
-      type: Object,
-      default: () => {}
+      type: Object
     },
     streamId: {
       type: String,

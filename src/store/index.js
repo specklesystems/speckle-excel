@@ -6,7 +6,8 @@ import ObjectLoader from '@speckle/objectloader'
 import streamsModule from './streams'
 import userModule from './user'
 import router from '../router'
-import { BaseObjectSerializer, ServerTransport } from 'speckle-ts'
+import { BaseObjectSerializer } from '../plugins/BaseObjectSerializer'
+import { ServerTransport } from '../plugins/ServerTransport'
 
 const xml2js = require('xml2js')
 
