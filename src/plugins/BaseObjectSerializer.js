@@ -37,7 +37,7 @@ class BaseObjectSerializer {
       const chunkSize = 5000
       if (object.length > chunkSize) {
         let serializedCount = 0
-        const data = []
+        const data = new Array()
         while (serializedCount < object.length) {
           const dataChunkCount = Math.min(chunkSize, object.length - serializedCount)
           data.push(new DataChunk(object.slice(serializedCount, serializedCount + dataChunkCount)))
@@ -45,7 +45,7 @@ class BaseObjectSerializer {
         }
         return await this.PreserializeObject(data)
       }
-      const convertedList = []
+      const convertedList = new Array()
       for (const element of object) {
         convertedList.push(await this.PreserializeObject(element))
       }
