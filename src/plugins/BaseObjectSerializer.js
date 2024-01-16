@@ -10,26 +10,30 @@ class BaseObjectSerializer {
     this.transports = transports
   }
   async SerializeBase(object) {
-    const converted = await this.PreserializeBase(object)
+    return await this.SerializeBaseWithClosures(object, [])
+  }
+  async SerializeBaseWithClosures(object, closures) {
+    const thisClosure = new Map()
+    closures.push(thisClosure)
+    const converted = await this.PreserializeEachObjectProperty(object, closures)
     let json = this.SerializeMap(converted)
     const id = this.GetId(json)
     converted.set('id', id)
+    this.AddSelfToParentClosures(id, closures)
+    if (thisClosure.size > 0) {
+      converted.set('__closure', Object.fromEntries(thisClosure))
+    }
+    converted.set('totalChildrenCount', thisClosure.size)
     json = this.SerializeMap(converted)
     await this.StoreObject(id, converted)
     return new SerializedBase(id, json)
   }
-  async PreserializeObject(object) {
+  async PreserializeObject(object, closures) {
     if (!(object instanceof Object) || object instanceof String) {
       return object
     }
-    if (object instanceof ObjectReference) {
-      const converted = new Map()
-      converted.set('referencedId', object.referencedId)
-      converted.set('speckle_type', object.speckle_type)
-      return converted
-    }
     if (object instanceof DataChunk) {
-      const serialized = await this.SerializeBase(object)
+      const serialized = await this.SerializeBaseWithClosures(object, [...closures])
       return new ObjectReference(serialized.id)
     }
     if (object instanceof Array) {
@@ -43,40 +47,46 @@ class BaseObjectSerializer {
           data.push(new DataChunk(object.slice(serializedCount, serializedCount + dataChunkCount)))
           serializedCount += dataChunkCount
         }
-        return await this.PreserializeObject(data)
+        return await this.PreserializeObject(data, closures)
       }
       const convertedList = new Array()
       for (const element of object) {
-        convertedList.push(await this.PreserializeObject(element))
+        convertedList.push(await this.PreserializeObject(element, closures))
       }
       return convertedList
     }
-    if (object instanceof Map) {
-      const converted = new Map()
-      for (const [key, value] of object) {
-        converted.set(key, await this.PreserializeObject(value))
-      }
-      return converted
+    if (object instanceof Object) {
+      return Object.fromEntries(await this.PreserializeEachObjectProperty(object, closures))
     }
-    throw new Error('Unsupported conversion type')
+    throw new Error(`Cannot serialize object ${object}`)
   }
-  async PreserializeBase(o) {
+  async PreserializeEachObjectProperty(o, closures) {
     const converted = new Map()
     for (const key of Object.keys(o)) {
-      converted.set(key, await this.PreserializeObject(o[key]))
+      const objKey = key
+      converted.set(key, await this.PreserializeObject(o[objKey], closures))
     }
     return converted
   }
-  async StoreObject(objectId, objectJson) {
+  async StoreObject(objectId, object) {
     for (const transport of this.transports) {
-      await transport.SaveObject(objectId, objectJson)
+      await transport.SaveObject(objectId, object)
     }
   }
-  SerializeMap(Map) {
-    return JSON.stringify(Object.fromEntries(Map))
+  SerializeMap(map) {
+    return JSON.stringify(Object.fromEntries(map))
   }
   GetId(json) {
     return (0, crypto_js_1.MD5)(json).toString(crypto_js_1.enc.Hex)
+  }
+  AddSelfToParentClosures(objectId, closureTables) {
+    // only go to closureTable length - 1 because the last closure table belongs to the object with the
+    // provided id
+    const parentClosureTablesCount = closureTables.length - 1
+    for (let parentLevel = 0; parentLevel < parentClosureTablesCount; parentLevel++) {
+      const childDepth = parentClosureTablesCount - parentLevel
+      closureTables[parentLevel].set(objectId, childDepth)
+    }
   }
 }
 exports.BaseObjectSerializer = BaseObjectSerializer
