@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { MD5, enc } from 'crypto-js'
 
 /**
@@ -79,10 +80,29 @@ export class BaseObjectSerializer {
 
     for (const key of Object.keys(o)) {
       const objKey = key as keyof object
-      converted.set(key, await this.PreserializeObject(o[objKey], closures))
+      converted.set(
+        BaseObjectSerializer.CleanKey(key),
+        await this.PreserializeObject(o[objKey], closures)
+      )
     }
 
     return converted
+  }
+
+  private static disallowedCharacters: string[] = ['.', '/']
+  private static CleanKey(originalKey: string): string {
+    const newStringChars = []
+    for (let i = 0; i < originalKey.length; i++) {
+      if (i == 1 && originalKey[i] == '@' && originalKey[0] == '@') {
+        continue
+      }
+      if (this.disallowedCharacters.includes(originalKey[i])) {
+        continue
+      }
+
+      newStringChars.push(originalKey[i])
+    }
+    return newStringChars.join('')
   }
 
   private async StoreObject(objectId: string, object: Map<string, any>) {
@@ -112,7 +132,7 @@ export class BaseObjectSerializer {
 }
 
 export class DataChunk implements IBase {
-  public speckle_type: string = 'Speckle.Core.Models.DataChunk'
+  public speckle_type = 'Speckle.Core.Models.DataChunk'
   public data: any[]
   constructor(data: any[] | null) {
     this.data = data ?? []
@@ -120,13 +140,13 @@ export class DataChunk implements IBase {
 }
 
 export class ObjectReference implements IBase {
-  public speckle_type: string = 'reference'
+  public speckle_type = 'reference'
 
   constructor(public referencedId: string) {}
 }
 
 export interface IBase {
-  speckle_type: string
+  readonly speckle_type: string
 }
 
 export interface ITransport {

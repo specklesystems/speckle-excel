@@ -1,6 +1,7 @@
 'use strict'
 Object.defineProperty(exports, '__esModule', { value: true })
 exports.SerializedBase = exports.ObjectReference = exports.DataChunk = exports.BaseObjectSerializer = void 0
+/* eslint-disable @typescript-eslint/ban-types */
 const crypto_js_1 = require('crypto-js')
 /**
  * Serializer for Speckle objects written in Typescript
@@ -64,9 +65,25 @@ class BaseObjectSerializer {
     const converted = new Map()
     for (const key of Object.keys(o)) {
       const objKey = key
-      converted.set(key, await this.PreserializeObject(o[objKey], closures))
+      converted.set(
+        BaseObjectSerializer.CleanKey(key),
+        await this.PreserializeObject(o[objKey], closures)
+      )
     }
     return converted
+  }
+  static CleanKey(originalKey) {
+    const newStringChars = []
+    for (let i = 0; i < originalKey.length; i++) {
+      if (i == 1 && originalKey[i] == '@' && originalKey[0] == '@') {
+        continue
+      }
+      if (this.disallowedCharacters.includes(originalKey[i])) {
+        continue
+      }
+      newStringChars.push(originalKey[i])
+    }
+    return newStringChars.join('')
   }
   async StoreObject(objectId, object) {
     for (const transport of this.transports) {
@@ -90,6 +107,7 @@ class BaseObjectSerializer {
   }
 }
 exports.BaseObjectSerializer = BaseObjectSerializer
+BaseObjectSerializer.disallowedCharacters = ['.', '/']
 class DataChunk {
   constructor(data) {
     this.speckle_type = 'Speckle.Core.Models.DataChunk'
