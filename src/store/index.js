@@ -6,6 +6,8 @@ import ObjectLoader from '@speckle/objectloader'
 import streamsModule from './streams'
 import userModule from './user'
 import router from '../router'
+import { BaseObjectSerializer } from '../plugins/BaseObjectSerializer'
+import { ServerTransport } from '../plugins/ServerTransport'
 
 const xml2js = require('xml2js')
 
@@ -193,51 +195,14 @@ export default new Vuex.Store({
       }
     },
     async createCommit(context, { streamId, branchName, message, object }) {
-      let query = `mutation objectCreate ($object: ObjectCreateInput!) {objectCreate(objectInput: $object)}`
-
       let serverUrl = localStorage.getItem('serverUrl')
       let token = localStorage.getItem(TOKEN)
 
-      let response = await fetch(`${serverUrl}/graphql`, {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer ' + token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          query: query,
-          variables: {
-            object: {
-              streamId: streamId,
-              objects: [object]
-            }
-          }
-        })
-      })
-      let data = await response.json()
-      let objectId = data.data.objectCreate[0]
+      const serverTransport = new ServerTransport(serverUrl, token, streamId)
+      const serializer = new BaseObjectSerializer([serverTransport])
+      const serialized = await serializer.SerializeBase(object)
 
-      query = `mutation commitCreate($myCommit: CommitCreateInput!){ commitCreate(commit: $myCommit)}`
-
-      response = await fetch(`${serverUrl}/graphql`, {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer ' + token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          query: query,
-          variables: {
-            myCommit: {
-              streamId: streamId,
-              branchName: branchName,
-              objectId: objectId,
-              message: message ? message : 'Data from Excel',
-              sourceApplication: 'excel'
-            }
-          }
-        })
-      })
+      await serverTransport.CreateCommit(branchName, serialized.id, message)
     },
     async receiveCommit(context, { sourceApplication, streamId, commitId, message }) {
       let query = `mutation objectReceive ($myInput:CommitReceivedInput!) {commitReceive(input:$myInput)}`

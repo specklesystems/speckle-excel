@@ -11,6 +11,7 @@ import {
   onTableChanged,
   onTableDeleted
 } from './dataTable.js'
+import { ExcelSheetDataRetriever } from './ExcelSheetDataRetreiver.js'
 
 const unflatten = require('flat').unflatten
 
@@ -668,11 +669,12 @@ export async function send(savedStream, streamId, branchName, message) {
       let sheetName = savedStream.selection.split('!')[0].replace(/'/g, '')
       let rangeAddress = savedStream.selection.split('!')[1]
       let sheet = context.workbook.worksheets.getItem(sheetName)
-
       let range = sheet.getRange(rangeAddress)
-      range.load('values')
-      await context.sync()
-      let values = range.values
+
+      let values = await ExcelSheetDataRetriever.GetValuesAsNestedList(
+        context,
+        savedStream.selection
+      )
 
       let data = []
       // check for specific conversion

@@ -423,7 +423,7 @@ export default {
         speckleIdRange.load('text')
         await context.sync()
 
-        let idsInViewer = new Array()
+        let idsInViewer = []
         for (let i = 0; i < speckleIdRange.text?.length; i++) {
           for (let j = 0; j < speckleIdRange.text[i].length; j++) {
             if (speckleIdRange.text[i][j].length < 32) continue

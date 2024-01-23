@@ -53,8 +53,6 @@ export default {
         'URL must be valid, with no trailing slash'
     ]
   }),
-  mounted() {},
-
   methods: {
     async login() {
       //when for is not visible (coming from web) don't validate
