@@ -56,6 +56,9 @@ class BaseObjectSerializer {
       }
       return convertedList
     }
+    if (object instanceof Function) {
+      return await this.PreserializeEachObjectProperty(object.call(), closures)
+    }
     if (object instanceof Object) {
       return Object.fromEntries(await this.PreserializeEachObjectProperty(object, closures))
     }
@@ -63,7 +66,13 @@ class BaseObjectSerializer {
   }
   async PreserializeEachObjectProperty(o, closures) {
     const converted = new Map()
-    for (const key of Object.keys(o)) {
+    const getters = Object.entries(Object.getOwnPropertyDescriptors(Reflect.getPrototypeOf(o)))
+      .filter(([key, descriptor]) => typeof descriptor.get === 'function' && key !== '__proto__')
+      .map(([key]) => key)
+    const objectKeys = new Array()
+    objectKeys.push(...Object.keys(o))
+    objectKeys.push(...getters)
+    for (const key of objectKeys) {
       const objKey = key
       converted.set(
         BaseObjectSerializer.CleanKey(key),
