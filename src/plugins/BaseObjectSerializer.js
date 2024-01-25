@@ -56,9 +56,6 @@ class BaseObjectSerializer {
       }
       return convertedList
     }
-    if (object instanceof Function) {
-      return await this.PreserializeEachObjectProperty(object.call(), closures)
-    }
     if (object instanceof Object) {
       return Object.fromEntries(await this.PreserializeEachObjectProperty(object, closures))
     }
