@@ -78,7 +78,15 @@ export class BaseObjectSerializer {
   ): Promise<Map<string, any>> {
     const converted = new Map<string, any>()
 
-    for (const key of Object.keys(o)) {
+    const getters = Object.entries(Object.getOwnPropertyDescriptors(Reflect.getPrototypeOf(o)))
+      .filter(([key, descriptor]) => typeof descriptor.get === 'function' && key !== '__proto__')
+      .map(([key]) => key)
+
+    const objectKeys = new Array<string>()
+    objectKeys.push(...Object.keys(o))
+    objectKeys.push(...getters)
+
+    for (const key of objectKeys) {
       const objKey = key as keyof object
       converted.set(
         BaseObjectSerializer.CleanKey(key),
