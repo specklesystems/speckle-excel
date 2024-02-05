@@ -7,12 +7,14 @@
           <template #activator="{ on, attrs }">
             <v-btn class="ma-2 pa-3" x-small v-bind="attrs" v-on="on">
               <v-icon dark left>mdi-plus-circle</v-icon>
-              Create New Stream
+              {{ `Create New ${$store.getters.isFE2 ? 'Project' : 'Stream'}` }}
             </v-btn>
           </template>
 
           <v-card>
-            <v-card-title class="text-h5">Create a New Stream</v-card-title>
+            <v-card-title class="text-h5">
+              {{ `Create New ${$store.getters.isFE2 ? 'Project' : 'Stream'}` }}
+            </v-card-title>
             <v-container class="px-6" pb-0>
               <v-text-field
                 v-model="streamName"
@@ -20,7 +22,7 @@
                 hide-details
                 dense
                 flat
-                placeholder="Stream Name (Optional)"
+                :placeholder="`${$store.getters.isFE2 ? 'Project' : 'Stream'} Name (Optional)`"
               />
               <v-text-field
                 v-model="description"
@@ -30,7 +32,10 @@
                 flat
                 placeholder="Description (Optional)"
               />
-              <v-switch v-model="privateStream" :label="'Private Stream'"></v-switch>
+              <v-switch
+                v-model="privateStream"
+                :label="`Private ${$store.getters.isFE2 ? 'Project' : 'Stream'}`"
+              ></v-switch>
             </v-container>
 
             <v-card-actions>
@@ -85,6 +90,8 @@
 <script>
 import gql from 'graphql-tag'
 import { StreamWrapper } from '@/utils/streamWrapper'
+import userQuery from '@/graphql/user.gql'
+import { createClient } from '../../vue-apollo'
 
 export default {
   name: 'CreateStreamDialog',
@@ -117,13 +124,17 @@ export default {
       return this.$store.getters.isAuthenticated
     }
   },
+  apollo: {
+    $client: createClient()
+  },
   methods: {
     async getStream() {
       try {
         const streamWrapper = new StreamWrapper(
           this.createStreamByIdText,
           this.accountId,
-          this.serverUrl
+          this.serverUrl,
+          this.$store.getters.isFE2
         )
         this.$router.push(`/streams/${streamWrapper.streamId}/${streamWrapper.commitId}`)
       } catch (e) {
@@ -150,7 +161,6 @@ export default {
       this.streamName = ''
       this.description = ''
       this.$mixpanel.track('Connector Action', { name: 'Create Stream' })
-      this.refresh()
       return res
     }
   }
