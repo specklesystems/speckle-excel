@@ -1,7 +1,7 @@
 <template>
-  <v-container>
+  <v-container class="pa-0">
     <v-row align="center">
-      <v-col cols="12" align="center" class="mt-5">
+      <v-col cols="12" align="center" class="mt-3">
         <p v-if="search" class="subtitle">No streams found 🧐</p>
         <div v-else-if="!$apollo.loading && filteredStreams && filteredStreams.length == 0">
           <p class="subtitle">
@@ -122,7 +122,6 @@ export default {
   },
   computed: {
     isAuthenticated() {
-      console.log(this.user)
       return this.$store.getters.isAuthenticated
     },
     user() {
@@ -132,7 +131,6 @@ export default {
       return this.$store.getters.serverUrl
     },
     filteredStreams() {
-      console.log('user', this.$store.state.user.user)
       if (!this.streams.items) return null
 
       let savedStreams = this.streams.items.filter(

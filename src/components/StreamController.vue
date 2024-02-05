@@ -12,7 +12,7 @@
             small
             icon
             color="primary"
-            :href="`${serverUrl}/streams/${stream.id}/branches/${selectedBranch.name}`"
+            :href="commitViewUrl()"
             target="_blank"
           >
             <v-icon small>mdi-open-in-new</v-icon>
@@ -313,6 +313,17 @@ export default {
     })
   },
   methods: {
+    commitViewUrl() {
+      if (this.$store.getters.isFE2) {
+        if (this.selectedCommit && this.selectedCommit.id) {
+          return `${this.serverUrl}/projects/${this.stream.id}/models/${this.selectedBranch.id}@${this.selectedCommit.id}`
+        } else {
+          return `${this.serverUrl}/projects/${this.stream.id}/models/${this.selectedBranch.id}`
+        }
+      } else {
+        return `${this.serverUrl}/streams/${this.stream.id}/branches/${this.selectedBranch.name}`
+      }
+    },
     swapReceiver() {
       this.isReceiver = !this.isReceiver
       this.$emit('loadByCommitId', this.selectedCommitId)

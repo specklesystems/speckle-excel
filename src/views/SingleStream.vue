@@ -17,7 +17,7 @@
           small
           icon
           color="primary"
-          :href="`${serverUrl}/streams/${savedStream.id}`"
+          :href="`${serverUrl}/${$store.getters.isFE2 ? 'projects' : 'streams'}/${savedStream.id}`"
           target="_blank"
         >
           <v-icon small>mdi-open-in-new</v-icon>
@@ -127,6 +127,7 @@ export default {
     }
   },
   apollo: {
+    $client: createClient(),
     stream: {
       prefetch: true,
       query: streamQuery,
@@ -178,7 +179,6 @@ export default {
         console.log(this.error)
       }
     },
-    $client: createClient(),
     $subscribe: {
       streamUpdated: {
         query: gql`

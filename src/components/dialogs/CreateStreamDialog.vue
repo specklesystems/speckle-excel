@@ -56,8 +56,16 @@
           </template>
 
           <v-card>
-            <v-card-title class="text-h5">Add a Stream by ID or URL</v-card-title>
-            <v-card-text>Stream IDs and Stream/Branch/Commit URLs are supported.</v-card-text>
+            <v-card-title class="text-h5">
+              {{ `Add a ${$store.getters.isFE2 ? 'Project' : 'Stream'} by ID or URL` }}
+            </v-card-title>
+            <v-card-text>
+              {{
+                $store.getters.isFE2
+                  ? 'Project IDs and Project/Model/Version URLs are supported.'
+                  : 'Stream IDs and Stream/Branch/Commit URLs are supported.'
+              }}
+            </v-card-text>
             <v-container class="px-6">
               <v-text-field
                 v-model="createStreamByIdText"
@@ -65,7 +73,7 @@
                 hide-details
                 dense
                 flat
-                placeholder="Stream URL"
+                :placeholder="$store.getters.isFE2 ? 'Project URL' : 'Stream URL'"
               />
             </v-container>
             <v-card-actions>
@@ -90,7 +98,6 @@
 <script>
 import gql from 'graphql-tag'
 import { StreamWrapper } from '@/utils/streamWrapper'
-import userQuery from '@/graphql/user.gql'
 import { createClient } from '../../vue-apollo'
 
 export default {
