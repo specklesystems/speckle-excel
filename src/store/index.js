@@ -106,7 +106,8 @@ export default new Vuex.Store({
   },
   plugins: [vuexLocal.plugin, vuexExcel.plugin],
   getters: {
-    serverUrl: () => localStorage.getItem('serverUrl')
+    serverUrl: () => localStorage.getItem('serverUrl'),
+    isFE2: () => localStorage.getItem('frontend2') === 'true'
   },
   mutations: {
     SET_SNACKBAR(state, value) {
@@ -142,11 +143,13 @@ export default new Vuex.Store({
             dialog.close()
             await dispatch('exchangeAccessCode', args.message)
             await dispatch('hasValidToken')
+            await dispatch('getServerInfo')
             router.push('/')
           })
         }
       )
     },
+
     async hasValidToken({ state, dispatch }) {
       if (localStorage.getItem(TOKEN) === null) return false
       await dispatch('getUser')
@@ -228,6 +231,45 @@ export default new Vuex.Store({
           }
         })
       })
+    },
+    async getServerInfo() {
+      let serverUrl = localStorage.getItem('serverUrl')
+
+      let response = await fetch(serverUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      // Now, to check for a specific header
+      const isFrontend2Server = (headers) => {
+        const HEADER = 'x-speckle-frontend-2'
+        const headerValue = headers.get(HEADER)
+
+        if (headerValue === null) {
+          return false
+        }
+
+        const value = headerValue.toLowerCase() === 'true'
+        if (headerValue !== 'true' && headerValue !== 'false') {
+          throw new Error(
+            `Headers contained ${HEADER} header, but value ${headerValue} could not be parsed to a bool`
+          )
+        }
+
+        return value
+      }
+
+      // Use the function to check the header
+      try {
+        let isF2Server = isFrontend2Server(response.headers)
+        localStorage.setItem('frontend2', isF2Server)
+        console.log('Is Frontend2 Server:', isF2Server)
+      } catch (error) {
+        console.error(error.message)
+        localStorage.setItem('frontend2', false)
+      }
     },
     async getUser(context) {
       try {
