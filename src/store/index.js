@@ -102,19 +102,26 @@ const vuexExcel = new VuexPersistence({
 
 export default new Vuex.Store({
   state: {
-    snackbar: {}
+    snackbar: {},
+    isFE2: false
   },
   plugins: [vuexLocal.plugin, vuexExcel.plugin],
   getters: {
-    serverUrl: () => localStorage.getItem('serverUrl'),
-    isFE2: () => localStorage.getItem('frontend2') === 'true'
+    serverUrl: () => localStorage.getItem('serverUrl')
   },
   mutations: {
     SET_SNACKBAR(state, value) {
       state.snackbar = value
+    },
+    UPDATE_IS_FE2(state, value) {
+      localStorage.setItem('frontend2', value)
+      state.isFE2 = value
     }
   },
   actions: {
+    updateIsFE2({ commit }, value) {
+      commit('UPDATE_IS_FE2', value)
+    },
     async redirect(_, data) {
       //go to login and refresh token
       window.location = `${data.serverUrl}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${data.challenge}`
@@ -166,6 +173,7 @@ export default new Vuex.Store({
       localStorage.removeItem('serverUrl')
       localStorage.removeItem(REFRESH_TOKEN)
       localStorage.removeItem('uuid')
+      localStorage.removeItem('frontend2')
 
       window.location = window.location.origin
     },
@@ -232,15 +240,8 @@ export default new Vuex.Store({
         })
       })
     },
-    async getServerInfo() {
+    async getServerInfo({ dispatch }) {
       let serverUrl = localStorage.getItem('serverUrl')
-
-      let response = await fetch(serverUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
 
       // Now, to check for a specific header
       const isFrontend2Server = (headers) => {
@@ -263,12 +264,20 @@ export default new Vuex.Store({
 
       // Use the function to check the header
       try {
-        let isF2Server = isFrontend2Server(response.headers)
-        localStorage.setItem('frontend2', isF2Server)
-        console.log('Is Frontend2 Server:', isF2Server)
+        let response = await fetch(serverUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+
+        let isFE2Server = isFrontend2Server(response.headers)
+        await dispatch('updateIsFE2', isFE2Server)
+        console.log('Is Frontend2 Server:', isFE2Server)
       } catch (error) {
-        console.error(error.message)
-        localStorage.setItem('frontend2', false)
+        console.warn(error.message)
+        // TODO: fallback is FE1, this should be changed later
+        await dispatch('updateIsFE2', false)
       }
     },
     async getUser(context) {
