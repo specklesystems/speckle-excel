@@ -1,11 +1,11 @@
 <template>
   <v-container fluid class="px-1 pb-0 pt-1">
-    <v-row>
-      <v-col class="center-content">
+    <v-row class="px-3 py-0">
+      <v-col class="d-flex justify-center pb-0">
         <!-- DIALOG: Create New Stream -->
         <v-dialog v-model="showCreateNewStream">
           <template #activator="{ on, attrs }">
-            <v-btn class="ma-2 pa-3" x-small v-bind="attrs" v-on="on">
+            <v-btn block class="pa-3" small v-bind="attrs" v-on="on">
               <v-icon dark left>mdi-plus-circle</v-icon>
               {{ `Create New ${$store.state.isFE2 ? 'Project' : 'Stream'}` }}
             </v-btn>
@@ -45,11 +45,12 @@
             </v-card-actions>
           </v-card>
         </v-dialog>
-
+      </v-col>
+      <v-col class="d-flex justify-center">
         <!-- DIALOG: Add a Stream by ID or URL -->
         <v-dialog v-model="showCreateStreamById">
           <template #activator="{ on, attrs }">
-            <v-btn class="ma-2 pa-3" x-small min-width="163" v-bind="attrs" v-on="on">
+            <v-btn block class="pa-3" small min-width="163" v-bind="attrs" v-on="on">
               <v-icon dark left>mdi-link-plus</v-icon>
               Add By ID or URL
             </v-btn>
