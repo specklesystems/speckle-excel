@@ -22,10 +22,10 @@
             v-tooltip="
               `${
                 stream.branches.totalCount === 1
-                  ? $store.getters.isFE2
+                  ? $store.state.isFE2
                     ? '1 model'
                     : '1 branch'
-                  : `${stream.branches.totalCount} ${$store.getters.isFE2 ? 'models' : 'branches'}`
+                  : `${stream.branches.totalCount} ${$store.state.isFE2 ? 'models' : 'branches'}`
               }`
             "
             outlined
@@ -40,10 +40,10 @@
             v-tooltip="
               `${
                 stream.commits.totalCount === 1
-                  ? $store.getters.isFE2
+                  ? $store.state.isFE2
                     ? '1 version'
                     : '1 commit'
-                  : `${stream.commits.totalCount} ${$store.getters.isFE2 ? 'versions' : 'commits'}`
+                  : `${stream.commits.totalCount} ${$store.state.isFE2 ? 'versions' : 'commits'}`
               }`
             "
             outlined

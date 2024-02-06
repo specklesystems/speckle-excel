@@ -17,7 +17,7 @@
           small
           icon
           color="primary"
-          :href="`${serverUrl}/${$store.getters.isFE2 ? 'projects' : 'streams'}/${savedStream.id}`"
+          :href="`${serverUrl}/${$store.state.isFE2 ? 'projects' : 'streams'}/${savedStream.id}`"
           target="_blank"
         >
           <v-icon small>mdi-open-in-new</v-icon>

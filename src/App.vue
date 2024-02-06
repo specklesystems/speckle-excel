@@ -29,7 +29,7 @@
 
           <v-list-item-content>
             <v-list-item-title>
-              {{ $store.getters.isFE2 ? 'Projects' : 'Streams' }}
+              {{ $store.state.isFE2 ? 'Projects' : 'Streams' }}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>

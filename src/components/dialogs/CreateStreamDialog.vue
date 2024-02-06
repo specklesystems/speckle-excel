@@ -7,13 +7,13 @@
           <template #activator="{ on, attrs }">
             <v-btn class="ma-2 pa-3" x-small v-bind="attrs" v-on="on">
               <v-icon dark left>mdi-plus-circle</v-icon>
-              {{ `Create New ${$store.getters.isFE2 ? 'Project' : 'Stream'}` }}
+              {{ `Create New ${$store.state.isFE2 ? 'Project' : 'Stream'}` }}
             </v-btn>
           </template>
 
           <v-card>
             <v-card-title class="text-h5">
-              {{ `Create New ${$store.getters.isFE2 ? 'Project' : 'Stream'}` }}
+              {{ `Create New ${$store.state.isFE2 ? 'Project' : 'Stream'}` }}
             </v-card-title>
             <v-container class="px-6" pb-0>
               <v-text-field
@@ -22,7 +22,7 @@
                 hide-details
                 dense
                 flat
-                :placeholder="`${$store.getters.isFE2 ? 'Project' : 'Stream'} Name (Optional)`"
+                :placeholder="`${$store.state.isFE2 ? 'Project' : 'Stream'} Name (Optional)`"
               />
               <v-text-field
                 v-model="description"
@@ -34,7 +34,7 @@
               />
               <v-switch
                 v-model="privateStream"
-                :label="`Private ${$store.getters.isFE2 ? 'Project' : 'Stream'}`"
+                :label="`Private ${$store.state.isFE2 ? 'Project' : 'Stream'}`"
               ></v-switch>
             </v-container>
 
@@ -57,11 +57,11 @@
 
           <v-card>
             <v-card-title class="text-h5">
-              {{ `Add a ${$store.getters.isFE2 ? 'Project' : 'Stream'} by ID or URL` }}
+              {{ `Add a ${$store.state.isFE2 ? 'Project' : 'Stream'} by ID or URL` }}
             </v-card-title>
             <v-card-text>
               {{
-                $store.getters.isFE2
+                $store.state.isFE2
                   ? 'Project IDs and Project/Model/Version URLs are supported.'
                   : 'Stream IDs and Stream/Branch/Commit URLs are supported.'
               }}
@@ -73,7 +73,7 @@
                 hide-details
                 dense
                 flat
-                :placeholder="$store.getters.isFE2 ? 'Project URL' : 'Stream URL'"
+                :placeholder="$store.state.isFE2 ? 'Project URL' : 'Stream URL'"
               />
             </v-container>
             <v-card-actions>
@@ -141,7 +141,7 @@ export default {
           this.createStreamByIdText,
           this.accountId,
           this.serverUrl,
-          this.$store.getters.isFE2
+          this.$store.state.isFE2
         )
         this.$router.push(`/streams/${streamWrapper.streamId}/${streamWrapper.commitId}`)
       } catch (e) {

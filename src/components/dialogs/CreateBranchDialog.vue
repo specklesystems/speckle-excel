@@ -15,7 +15,7 @@
     </template>
     <v-card>
       <v-card-title class="text-h5 mb-1">
-        {{ `Create a New ${$store.getters.isFE2 ? 'Model' : 'Branch'}` }}
+        {{ `Create a New ${$store.state.isFE2 ? 'Model' : 'Branch'}` }}
       </v-card-title>
       <v-card-subtitle class="py-0 my-0 font-italic">under {{ streamName }} stream</v-card-subtitle>
       <v-container class="px-6" pb-0>

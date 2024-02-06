@@ -314,7 +314,7 @@ export default {
   },
   methods: {
     commitViewUrl() {
-      if (this.$store.getters.isFE2) {
+      if (this.$store.state.isFE2) {
         if (this.selectedCommit && this.selectedCommit.id) {
           return `${this.serverUrl}/projects/${this.stream.id}/models/${this.selectedBranch.id}@${this.selectedCommit.id}`
         } else {
