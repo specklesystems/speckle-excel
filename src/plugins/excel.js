@@ -599,13 +599,12 @@ export async function bake(
             selectedHeaders = filterArrayData(dialog.items, arrayData)
           } else if (previousHeaders) {
             selectedHeaders = filterArrayData(previousHeaders, arrayData)
-          } else {
-            selectedHeaders = arrayData
           }
         }
 
         if (signal.aborted) return
 
+        selectedHeaders ??= arrayData
         await addIdDataToObjectData(selectedHeaders)
         await bakeArray(selectedHeaders, rowStart, colStart, context)
       }
