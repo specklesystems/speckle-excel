@@ -102,7 +102,8 @@ const vuexExcel = new VuexPersistence({
 
 export default new Vuex.Store({
   state: {
-    snackbar: {}
+    snackbar: {},
+    isFE2: false
   },
   plugins: [vuexLocal.plugin, vuexExcel.plugin],
   getters: {
@@ -111,9 +112,16 @@ export default new Vuex.Store({
   mutations: {
     SET_SNACKBAR(state, value) {
       state.snackbar = value
+    },
+    UPDATE_IS_FE2(state, value) {
+      localStorage.setItem('frontend2', value)
+      state.isFE2 = value
     }
   },
   actions: {
+    updateIsFE2({ commit }, value) {
+      commit('UPDATE_IS_FE2', value)
+    },
     async redirect(_, data) {
       //go to login and refresh token
       window.location = `${data.serverUrl}/authn/verify/${process.env.VUE_APP_SPECKLE_ID}/${data.challenge}`
@@ -142,11 +150,13 @@ export default new Vuex.Store({
             dialog.close()
             await dispatch('exchangeAccessCode', args.message)
             await dispatch('hasValidToken')
+            await dispatch('getServerInfo')
             router.push('/')
           })
         }
       )
     },
+
     async hasValidToken({ state, dispatch }) {
       if (localStorage.getItem(TOKEN) === null) return false
       await dispatch('getUser')
@@ -163,6 +173,7 @@ export default new Vuex.Store({
       localStorage.removeItem('serverUrl')
       localStorage.removeItem(REFRESH_TOKEN)
       localStorage.removeItem('uuid')
+      localStorage.removeItem('frontend2')
 
       window.location = window.location.origin
     },
@@ -228,6 +239,46 @@ export default new Vuex.Store({
           }
         })
       })
+    },
+    async getServerInfo({ dispatch }) {
+      let serverUrl = localStorage.getItem('serverUrl')
+
+      // Now, to check for a specific header
+      const isFrontend2Server = (headers) => {
+        const HEADER = 'x-speckle-frontend-2'
+        const headerValue = headers.get(HEADER)
+
+        if (headerValue === null) {
+          return false
+        }
+
+        const value = headerValue.toLowerCase() === 'true'
+        if (headerValue !== 'true' && headerValue !== 'false') {
+          throw new Error(
+            `Headers contained ${HEADER} header, but value ${headerValue} could not be parsed to a bool`
+          )
+        }
+
+        return value
+      }
+
+      // Use the function to check the header
+      try {
+        let response = await fetch(serverUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+
+        let isFE2Server = isFrontend2Server(response.headers)
+        await dispatch('updateIsFE2', isFE2Server)
+        console.log('Is Frontend2 Server:', isFE2Server)
+      } catch (error) {
+        console.warn(error.message)
+        // TODO: fallback is FE1, this should be changed later
+        await dispatch('updateIsFE2', false)
+      }
     },
     async getUser(context) {
       try {

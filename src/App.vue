@@ -24,6 +24,16 @@
       <v-divider></v-divider>
 
       <v-list dense nav>
+        <v-list-item :to="'/'">
+          <v-list-item-icon>📃</v-list-item-icon>
+
+          <v-list-item-content>
+            <v-list-item-title>
+              {{ $store.state.isFE2 ? 'Projects' : 'Streams' }}
+            </v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
         <v-list-item v-for="item in items" :key="item.name" link :to="item.to">
           <v-list-item-icon>
             {{ item.icon }}
@@ -111,11 +121,6 @@ export default {
     showSnackbar: false,
     items: [
       {
-        name: 'Streams',
-        icon: '📃',
-        to: '/'
-      },
-      {
         name: 'Log out',
         icon: '🏃‍♂️',
         to: '/logout'
@@ -185,9 +190,6 @@ export default {
       let distinct_id =
         '@' +
         crypto.createHash('md5').update(this.user.email.toLowerCase()).digest('hex').toUpperCase()
-
-      console.log(server_id)
-      console.log(distinct_id)
 
       this.$mixpanel.register({ server_id: server_id, hostApp: 'excel', type: 'action' })
 

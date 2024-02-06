@@ -14,7 +14,9 @@
       </v-btn>
     </template>
     <v-card>
-      <v-card-title class="text-h5 mb-1">Create a New Branch</v-card-title>
+      <v-card-title class="text-h5 mb-1">
+        {{ `Create a New ${$store.state.isFE2 ? 'Model' : 'Branch'}` }}
+      </v-card-title>
       <v-card-subtitle class="py-0 my-0 font-italic">under {{ streamName }} stream</v-card-subtitle>
       <v-container class="px-6" pb-0>
         <v-text-field
@@ -48,6 +50,7 @@
 
 <script>
 import gql from 'graphql-tag'
+import { createClient } from '../../vue-apollo'
 // import { bus } from '@/main'
 export default {
   name: 'CreateBranchDialog',
@@ -66,7 +69,7 @@ export default {
       showCreateBranch: false,
       branchName: '',
       description: '',
-      defaultDescription: 'Stream created from SketchUp',
+      defaultDescription: 'Stream created from Excel',
       accountToCreateStream: null
     }
   },
@@ -75,6 +78,9 @@ export default {
       if (!this.$store.state) return false
       return this.$store.getters.isAuthenticated
     }
+  },
+  apollo: {
+    client: createClient()
   },
   methods: {
     async createBranch() {

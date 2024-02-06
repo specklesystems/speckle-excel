@@ -43,7 +43,9 @@ export default {
   name: 'Login',
   data: () => ({
     serverUrl:
-      process.env.NODE_ENV === 'development' ? 'https://latest.speckle.dev' : 'https://speckle.xyz',
+      process.env.NODE_ENV === 'development'
+        ? 'https://latest.speckle.systems'
+        : 'https://app.speckle.systems',
     validForm: true,
     serverError: '',
     serverUrlRules: [

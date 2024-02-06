@@ -1,8 +1,8 @@
 <template>
-  <v-card class="pa-5 mb-3" style="transition: all 0.2s" @click="openStream">
+  <v-card class="px-5 py-2 mb-3" style="transition: all 0.2s" @click="openStream">
     <v-row>
       <v-col cols="12" sm="8" class="align-self-center">
-        <div class="subtitle-1">
+        <div class="text-h6">
           {{ stream.name }}
         </div>
         <div class="caption mb-2 mt-1 text-truncate">
@@ -20,9 +20,13 @@
           </v-chip>
           <v-chip
             v-tooltip="
-              stream.branches.totalCount +
-              ' branch' +
-              (stream.branches.totalCount === 1 ? '' : 'es')
+              `${
+                stream.branches.totalCount === 1
+                  ? $store.state.isFE2
+                    ? '1 model'
+                    : '1 branch'
+                  : `${stream.branches.totalCount} ${$store.state.isFE2 ? 'models' : 'branches'}`
+              }`
             "
             outlined
             class="ml-2"
@@ -34,7 +38,13 @@
 
           <v-chip
             v-tooltip="
-              stream.commits.totalCount + ' commit' + (stream.commits.totalCount === 1 ? '' : 's')
+              `${
+                stream.commits.totalCount === 1
+                  ? $store.state.isFE2
+                    ? '1 version'
+                    : '1 commit'
+                  : `${stream.commits.totalCount} ${$store.state.isFE2 ? 'versions' : 'commits'}`
+              }`
             "
             outlined
             class="ml-2"
@@ -45,7 +55,7 @@
           </v-chip>
         </div>
       </v-col>
-      <v-col cols="12" sm="4" class="text-sm-center text-md-right align-self-center">
+      <v-col cols="12" sm="4" class="text-sm-center text-md-right align-self-center pt-0">
         <div>
           <span v-for="user in collaboratorsSlice" :key="user.id">
             <user-avatar
