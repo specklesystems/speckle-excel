@@ -134,7 +134,8 @@ export default {
       fetchPolicy: 'network-only',
       variables() {
         return {
-          id: this.streamId
+          id: this.streamId,
+          limit: 100
         }
       },
       result() {
