@@ -152,8 +152,6 @@ export default {
       let arr = []
       this.updatedObjectId = this.object.data.id ?? this.nearestObjectId
       const delimiter = ':::'
-      console.log(this.updatedObjectId, delimiter)
-      console.log(this.nearestObjectId)
       for (let [key, val] of entries) {
         let name = key
         if (key.startsWith('__')) continue
@@ -166,7 +164,6 @@ export default {
           if (val.length > 0 && val[0].referencedId) {
             let firstObj = await this.getObjectFromCurrentStreamWithId(val[0].referencedId)
             speckleTypeOfFirstObj = firstObj?.data?.stream?.object?.data?.speckle_type
-            console.log('value asdfasdf', speckleTypeOfFirstObj)
           }
 
           if (speckleTypeOfFirstObj === 'Speckle.Core.Models.DataChunk') {
@@ -257,16 +254,13 @@ export default {
     },
     async getObjectFromCurrentStreamWithId(id) {
       let client = createClient()
-      let result = await client.query({
+      return await client.query({
         query: objectQuery,
         variables: {
           streamId: this.streamId,
           id: id
         }
       })
-      // .then((result) => console.log('asdfasdfsadf', result))
-      console.log('asdfasdfasdf', result)
-      return result
     }
   }
 }

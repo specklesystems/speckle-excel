@@ -4,7 +4,7 @@
       <v-chip @click="toggleLoadExpand">
         <v-icon small class="mr-2">mdi-code-array</v-icon>
         {{ keyName }}
-        <span class="caption ml-2">List (> {{ (value.length - 1) * 5000 }} elements)</span>
+        <span class="caption ml-2">List ( >{{ (value.length - 1) * 5000 }} elements)</span>
         <v-icon class="ml-2" small>
           {{ localExpand ? 'mdi-minus' : 'mdi-plus' }}
         </v-icon>
@@ -13,8 +13,11 @@
         <v-card class="pt-3">
           <v-card-text class="caption">
             Receiving data from the Speckleverse...
-
-            <v-progress-linear class="mt-2" indeterminate color="primary"></v-progress-linear>
+            <v-progress-linear
+              class="mt-2"
+              :value="`${(numChunksReceived / value.length) * 100}`"
+              color="primary"
+            ></v-progress-linear>
             <v-btn class="mt-3" outlined x-small color="primary" @click="cancel">Cancel</v-btn>
           </v-card-text>
         </v-card>
@@ -46,6 +49,9 @@
 </template>
 <script>
 import { bake } from '../plugins/excel'
+import objectQuery from '../graphql/object.gql'
+import { createClient } from '../vue-apollo'
+
 let ac = new AbortController()
 export default {
   name: 'ObjectChunkedListViewer',
@@ -94,7 +100,8 @@ export default {
       localExpand: false,
       itemsPerLoad: 3,
       currentLimit: 3,
-      progress: false
+      progress: false,
+      numChunksReceived: 0
     }
   },
   computed: {
@@ -163,16 +170,36 @@ export default {
       this.progress = true
       this.$mixpanel.track('Receive')
 
-      let receiverSelection = await bake(
-        this.value,
-        this.streamId,
-        this.commitId,
-        this.commitMsg,
-        this.$refs.modal,
-        ac.signal,
-        this.nearestObjectId,
-        this.pathFromNearestObject
-      )
+      let allData = []
+
+      for (let i = 0; i < this.value.length; i++) {
+        if (ac.signal.aborted) {
+          break
+        }
+
+        let speckleObj = await this.getObjectFromCurrentStreamWithId(this.value[i].referencedId)
+        let speckleType = speckleObj?.data?.stream?.object?.data?.speckle_type
+        if (speckleType !== 'Speckle.Core.Models.DataChunk') {
+          continue
+        }
+
+        allData.push(...speckleObj.data.stream.object.data.data)
+        this.numChunksReceived++
+      }
+
+      let receiverSelection = null
+      if (!ac.signal.aborted) {
+        receiverSelection = await bake(
+          allData,
+          this.streamId,
+          this.commitId,
+          this.commitMsg,
+          this.$refs.modal,
+          ac.signal,
+          this.nearestObjectId,
+          this.pathFromNearestObject
+        )
+      }
 
       if (receiverSelection) {
         receiverSelection.fullKeyName = this.fullKeyName
@@ -184,6 +211,17 @@ export default {
       }
 
       this.progress = false
+      this.numChunksReceived = 0
+    },
+    async getObjectFromCurrentStreamWithId(id) {
+      let client = createClient()
+      return await client.query({
+        query: objectQuery,
+        variables: {
+          streamId: this.streamId,
+          id: id
+        }
+      })
     }
   }
 }
