@@ -110,7 +110,7 @@ export default {
             name,
             value: val,
             type: 'ObjectListViewer',
-            description: `List (${val.length} elements haha)`
+            description: `List (${val.length} elements)`
           })
           // TODO -> list value template displayer
         } else if (typeof val === 'object' && val !== null) {
