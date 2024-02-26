@@ -60,6 +60,7 @@ export default {
   components: {
     FilterModal: () => import('./FilterModal'),
     ObjectListViewer: () => import('./ObjectListViewer'),
+    ObjectChunkedListViewer: () => import('./ObjectChunkedListViewer'),
     ObjectSimpleViewer: () => import('./ObjectSimpleViewer'),
     ObjectValueViewer: () => import('./ObjectValueViewer')
   },
@@ -123,8 +124,8 @@ export default {
           id: this.value.referencedId
         }
       },
-      result() {
-        this.objectEntries = this.getObjectEntries()
+      async result() {
+        this.objectEntries = await this.getObjectEntries()
       },
       skip() {
         return !this.localExpand
@@ -145,14 +146,12 @@ export default {
     cancel() {
       ac.abort()
     },
-    getObjectEntries() {
+    async getObjectEntries() {
       if (!this.object) return []
       let entries = Object.entries(this.object.data)
       let arr = []
       this.updatedObjectId = this.object.data.id ?? this.nearestObjectId
       const delimiter = ':::'
-      console.log(this.updatedObjectId, delimiter)
-      console.log(this.nearestObjectId)
       for (let [key, val] of entries) {
         let name = key
         if (key.startsWith('__')) continue
@@ -161,13 +160,29 @@ export default {
         if (key === 'speckle_type') name = 'speckle type'
 
         if (Array.isArray(val)) {
-          arr.push({
-            key,
-            name,
-            value: val,
-            type: 'ObjectListViewer',
-            pathFromNearestObject: key + delimiter
-          })
+          let speckleTypeOfFirstObj = null
+          if (val.length > 0 && val[0].referencedId) {
+            let firstObj = await this.getObjectFromCurrentStreamWithId(val[0].referencedId)
+            speckleTypeOfFirstObj = firstObj?.data?.stream?.object?.data?.speckle_type
+          }
+
+          if (speckleTypeOfFirstObj === 'Speckle.Core.Models.DataChunk') {
+            arr.push({
+              key,
+              name,
+              value: val,
+              type: 'ObjectChunkedListViewer',
+              pathFromNearestObject: key + delimiter
+            })
+          } else {
+            arr.push({
+              key,
+              name,
+              value: val,
+              type: 'ObjectListViewer',
+              pathFromNearestObject: key + delimiter
+            })
+          }
         } else if (typeof val === 'object' && val !== null) {
           if (val.speckle_type && val.speckle_type === 'reference') {
             arr.push({
@@ -236,6 +251,16 @@ export default {
       }
 
       this.progress = false
+    },
+    async getObjectFromCurrentStreamWithId(id) {
+      let client = createClient()
+      return await client.query({
+        query: objectQuery,
+        variables: {
+          streamId: this.streamId,
+          id: id
+        }
+      })
     }
   }
 }
