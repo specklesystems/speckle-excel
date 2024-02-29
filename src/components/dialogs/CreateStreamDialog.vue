@@ -144,6 +144,14 @@ export default {
           this.serverUrl,
           this.$store.state.isFE2
         )
+        const match = streamWrapper.matchUrl(this.createStreamByIdText)
+        if (match.groups.additionalModels !== undefined) {
+          this.$eventHub.$emit('error', {
+            text:
+              'Multi-model URLs are not supported!\nTry to select just one single model in the web app and paste that in.'
+          })
+          return
+        }
         this.$router.push(`/streams/${streamWrapper.streamId}/${streamWrapper.commitId}`)
       } catch (e) {
         console.log(e)
