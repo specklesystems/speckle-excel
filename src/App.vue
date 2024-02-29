@@ -18,6 +18,7 @@
         </v-list-item-avatar>
         <v-list-item-content>
           <v-list-item-title>{{ user.name }}</v-list-item-title>
+          <v-list-item-subtitle class="smaller-text">{{ serverUrl }}</v-list-item-subtitle>
         </v-list-item-content>
       </v-list-item>
 
@@ -312,5 +313,9 @@ export default {
   visibility: visible;
   opacity: 1;
   transition: opacity 0.15s;
+}
+
+.smaller-text {
+  font-size: 0.7rem; /* Example: Adjust the size as needed */
 }
 </style>
