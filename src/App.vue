@@ -104,6 +104,7 @@
         <span class="caption">CONNECTOR</span>
       </v-btn>
     </v-app-bar>
+    <global-toast />
 
     <v-main :style="background">
       <router-view />
@@ -115,7 +116,9 @@
 const crypto = require('crypto')
 export default {
   name: 'App',
-  components: {},
+  components: {
+    GlobalToast: () => import('@/components/GlobalToast')
+  },
   data: () => ({
     drawer: null,
     showSnackbar: false,
