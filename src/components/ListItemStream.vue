@@ -19,15 +19,7 @@
             {{ role }}
           </v-chip>
           <v-chip
-            v-tooltip="
-              `${
-                stream.branches.totalCount === 1
-                  ? $store.state.isFE2
-                    ? '1 model'
-                    : '1 branch'
-                  : `${stream.branches.totalCount} ${$store.state.isFE2 ? 'models' : 'branches'}`
-              }`
-            "
+            v-tooltip="`${stream.branches.totalCount === 1 ? '1 model' : 'models'}`"
             outlined
             class="ml-2"
             small
@@ -37,15 +29,7 @@
           </v-chip>
 
           <v-chip
-            v-tooltip="
-              `${
-                stream.commits.totalCount === 1
-                  ? $store.state.isFE2
-                    ? '1 version'
-                    : '1 commit'
-                  : `${stream.commits.totalCount} ${$store.state.isFE2 ? 'versions' : 'commits'}`
-              }`
-            "
+            v-tooltip="`${stream.commits.totalCount === 1 ? '1 version' : 'versions'}`"
             outlined
             class="ml-2"
             small
