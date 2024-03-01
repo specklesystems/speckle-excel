@@ -6,6 +6,8 @@ import { apolloProvider } from './vue-apollo'
 import vuetify from './plugins/vuetify'
 import '@mdi/font/css/materialdesignicons.css'
 
+Vue.prototype.$eventHub = new Vue()
+
 Vue.config.productionTip = false
 
 import VueTimeago from 'vue-timeago'

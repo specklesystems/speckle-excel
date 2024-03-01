@@ -16,6 +16,11 @@ export class StreamWrapper {
     }
   }
 
+  matchUrl(streamUrl) {
+    const fe2UrlRegex = /\/projects\/(?<projectId>[\w\d]+)(?:\/models\/(?<model>[\w\d]+(?:@[\w\d]+)?)(?:,(?<additionalModels>[\w\d]+(?:@[\w\d]+)?))*)?/
+    return fe2UrlRegex.exec(streamUrl)
+  }
+
   streamWrapperFromUrl(streamUrl) {
     this.url = new URL(streamUrl)
     this.segments = this.url.pathname.split('/').map((segment) => segment + '/')
