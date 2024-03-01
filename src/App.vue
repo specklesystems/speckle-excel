@@ -18,22 +18,13 @@
         </v-list-item-avatar>
         <v-list-item-content>
           <v-list-item-title>{{ user.name }}</v-list-item-title>
+          <v-list-item-subtitle class="smaller-text">{{ serverUrl }}</v-list-item-subtitle>
         </v-list-item-content>
       </v-list-item>
 
       <v-divider></v-divider>
 
       <v-list dense nav>
-        <v-list-item :to="'/'">
-          <v-list-item-icon>📃</v-list-item-icon>
-
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ $store.state.isFE2 ? 'Projects' : 'Streams' }}
-            </v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-
         <v-list-item v-for="item in items" :key="item.name" link :to="item.to">
           <v-list-item-icon>
             {{ item.icon }}
@@ -123,6 +114,11 @@ export default {
     drawer: null,
     showSnackbar: false,
     items: [
+      {
+        name: 'Projects',
+        icon: '📃',
+        to: '/'
+      },
       {
         name: 'Log out',
         icon: '🏃‍♂️',
@@ -315,5 +311,9 @@ export default {
   visibility: visible;
   opacity: 1;
   transition: opacity 0.15s;
+}
+
+.smaller-text {
+  font-size: 0.7rem; /* Example: Adjust the size as needed */
 }
 </style>

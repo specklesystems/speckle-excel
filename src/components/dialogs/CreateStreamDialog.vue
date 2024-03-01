@@ -7,13 +7,13 @@
           <template #activator="{ on, attrs }">
             <v-btn block class="pa-3" small v-bind="attrs" v-on="on">
               <v-icon dark left>mdi-plus-circle</v-icon>
-              {{ `Create New ${$store.state.isFE2 ? 'Project' : 'Stream'}` }}
+              {{ `Create New Project` }}
             </v-btn>
           </template>
 
           <v-card>
             <v-card-title class="text-h5">
-              {{ `Create New ${$store.state.isFE2 ? 'Project' : 'Stream'}` }}
+              {{ `Create New Project` }}
             </v-card-title>
             <v-container class="px-6" pb-0>
               <v-text-field
@@ -22,7 +22,7 @@
                 hide-details
                 dense
                 flat
-                :placeholder="`${$store.state.isFE2 ? 'Project' : 'Stream'} Name (Optional)`"
+                :placeholder="`Project Name (Optional)`"
               />
               <v-text-field
                 v-model="description"
@@ -32,10 +32,7 @@
                 flat
                 placeholder="Description (Optional)"
               />
-              <v-switch
-                v-model="privateStream"
-                :label="`Private ${$store.state.isFE2 ? 'Project' : 'Stream'}`"
-              ></v-switch>
+              <v-switch v-model="privateStream" label="Private Project"></v-switch>
             </v-container>
 
             <v-card-actions>
@@ -58,14 +55,10 @@
 
           <v-card>
             <v-card-title class="text-h5">
-              {{ `Add a ${$store.state.isFE2 ? 'Project' : 'Stream'} by ID or URL` }}
+              {{ `Add a Project by ID or URL` }}
             </v-card-title>
             <v-card-text>
-              {{
-                $store.state.isFE2
-                  ? 'Project IDs and Project/Model/Version URLs are supported.'
-                  : 'Stream IDs and Stream/Branch/Commit URLs are supported.'
-              }}
+              {{ 'Project IDs and Project/Model/Version URLs are supported.' }}
             </v-card-text>
             <v-container class="px-6">
               <v-text-field
@@ -74,7 +67,7 @@
                 hide-details
                 dense
                 flat
-                :placeholder="$store.state.isFE2 ? 'Project URL' : 'Stream URL'"
+                :placeholder="'Project URL'"
               />
             </v-container>
             <v-card-actions>
