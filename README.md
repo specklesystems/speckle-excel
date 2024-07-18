@@ -19,7 +19,7 @@ Comprehensive developer and user documentation can be found in our:
 For developing and debugging this connector you'll need to set up a Speckle App.
 The server on which the app runs must be on `https`, so **do not use a local Speckle server** on `http://localhost:3000/` as it will not work.
 
-You can use `https://latest.speckle.dev/` or `https://speckle.xyz/`.
+You can use `https://latest.speckle.systems/` or `https://app.speckle.systems/`.
 
 Now open up its frontend, and under your profile register a new app.
 
