@@ -57,7 +57,7 @@
           </v-list-item-content>
         </v-list-item>
 
-        <v-list-item href="https://speckle.systems/tag/excel/" target="_blank">
+        <v-list-item href="https://v1.speckle.systems/tag/excel/" target="_blank">
           <v-list-item-icon>📺</v-list-item-icon>
 
           <v-list-item-content>
