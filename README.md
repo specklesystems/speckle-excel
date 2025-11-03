@@ -19,13 +19,7 @@
 
 ## Introduction
 
-This repository contains the Speckle Excel Connector, originally released as an early alpha. It enabled sending and receiving data between Microsoft Excel and the Speckle platform. The project is no longer maintained and is not compatible with Speckle v3. For modern workflows, use current SDKs and APIs documented at docs.speckle.systems.
-
-## Documentation
-
-See docs at:
-
-- https://docs.speckle.systems
+This repository contains the Speckle Excel Connector, originally released as an early alpha. It enabled sending and receiving data between Microsoft Excel and the Speckle platform. The project is no longer maintained and is not compatible with Speckle v3. For modern workflows, use current SDKs and APIs documented at docs.speckle.systems
 
 ## Developing and debugging
 
@@ -35,10 +29,7 @@ Note: the instructions below are preserved for archival purposes.
 
 You need a Speckle App. The server must be on https. Do not use a local server on http://localhost:3000.
 
-Use one of:
-
-- https://latest.speckle.dev/
-- https://speckle.xyz/
+Use: https://app.speckle.systems/
 
 In the server frontend, register a new app.
 
