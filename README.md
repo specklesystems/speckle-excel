@@ -4,15 +4,14 @@
 </h1>
 
 <p align="center">
-  <a href="https://twitter.com/SpeckleSystems"><img src="https://img.shields.io/twitter/follow/SpeckleSystems?style=social" alt="Twitter Follow"></a>
-  <a href="https://speckle.community"><img src="https://img.shields.io/discourse/users?server=https%3A%2F%2Fspeckle.community&amp;style=flat-square&amp;logo=discourse&amp;logoColor=white" alt="Community forum users"></a>
+  <a href="https://speckle.community"><img src="https://img.shields.io/discourse/users?server=https%3A%2F%2Fspeckle.community&style=flat-square&logo=discourse&logoColor=white" alt="Community forum users"></a>
   <a href="https://speckle.systems"><img src="https://img.shields.io/badge/https://-speckle.systems-royalblue?style=flat-square" alt="website"></a>
-  <a href="https://speckle.guide/dev/"><img src="https://img.shields.io/badge/docs-speckle.guide-orange?style=flat-square&amp;logo=read-the-docs&amp;logoColor=white" alt="docs"></a>
+  <a href="https://docs.speckle.systems"><img src="https://img.shields.io/badge/docs-docs.speckle.systems-orange?style=flat-square&logo=read-the-docs&logoColor=white" alt="docs"></a>
 </p>
 
-> **Status:** This connector is **deprecated** and **not compatible with Speckle v3**.  
-> It is retained here as open source for reference and community use only.  
-> There are currently **no plans for active maintenance or feature updates.**
+> Status: deprecated; not compatible with Speckle v3.
+> Retained as open source for reference and community use.
+> No active maintenance or feature updates are planned.
 
 <h3 align="center">
   Speckle Connector for Excel
@@ -20,47 +19,43 @@
 
 ## Introduction
 
-This repository contains the **Speckle Excel Connector**, originally released as an early alpha version.  
-It allowed users to send and receive data between Microsoft Excel and the Speckle platform.
-
-While the project remains open source, it is no longer maintained or compatible with the latest Speckle v3 platform.  
-Developers and users are encouraged to explore Speckle’s newer APIs and SDKs for modern data workflows.
+This repository contains the Speckle Excel Connector, originally released as an early alpha. It enabled sending and receiving data between Microsoft Excel and the Speckle platform. The project is no longer maintained and is not compatible with Speckle v3. For modern workflows, use current SDKs and APIs documented at docs.speckle.systems.
 
 ## Documentation
 
-Comprehensive developer and user documentation can be found on our documentation portal:
+See docs at:
 
-#### 📚 [Speckle Docs](https://speckle.guide/dev/)
+- https://docs.speckle.systems
 
-## Developing & Debugging
+## Developing and debugging
 
-### App Setup
+Note: the instructions below are preserved for archival purposes.
 
-To develop and debug this connector, you will need to set up a Speckle App.
+### App setup
 
-The server on which the app runs must be on `https`, so **do not use** a local Speckle server at `http://localhost:3000/` — it will not work.
+You need a Speckle App. The server must be on https. Do not use a local server on http://localhost:3000.
 
-You can use one of the public test servers:
+Use one of:
 
-- `https://latest.speckle.dev/`
-- `https://speckle.xyz/`
+- https://latest.speckle.dev/
+- https://speckle.xyz/
 
-Then open the server frontend and register a new app under your profile. Example configuration:
+In the server frontend, register a new app.
 
-- **Name:** ExcelConnector  
-- **Redirect URL:** `https://localhost:3000`  
-- **Permissions:** `streams:read, streams:write, profile:read, profile:email, users:read`
+Example values for an app while the Excel add-in runs on https://localhost:3000:
 
-Take note of the `app id` and `secret`, then in your local `speckle-excel` repo:
+- Name: ExcelConnector
+- Redirect URL: `https://localhost:3000`
+- Permissions: `streams:read, streams:write, profile:read, profile:email, users:read`
 
-1. Duplicate `.env sample` → `.env.local`
-2. Fill in your `app id` and `secret`
-3. Set `BASE_URL=https://localhost:3000`
+Then in your local `speckle-excel` repo:
 
-### Running the Connector Locally
+- Duplicate `.env sample` to `.env.local`
+- Add your `app id` and `secret`
+- Set `BASE_URL=https://localhost:3000`
 
-Run it locally with the following commands:
+### Running locally
 
 ```bash
-npm install     # first time setup
-npm run serve   # start the local Vue app
+npm install
+npm run serve
